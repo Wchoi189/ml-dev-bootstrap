@@ -598,6 +598,15 @@ enhanced_main() {
                 create_backup=true
                 shift
                 ;;
+        --skip-upgrade)
+                export AUTO_UPGRADE=false
+                log_info "Skipping system package upgrade."
+                shift
+                ;;
+        --progress)
+                export SHOW_PROGRESS=true
+                shift
+                ;;                
             --progress)
                 export SHOW_PROGRESS=true
                 shift

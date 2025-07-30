@@ -55,6 +55,16 @@ export GIT_USER_EMAIL="your.email@example.com"
 sudo -E ./setup.sh git
 ```
 
+## Setting a specific password(Optional)
+1.  **Enable the password feature** and define your chosen password by exporting two environment variables:
+    ```bash
+    export SET_USER_PASSWORD=true
+    export USER_PASSWORD="your_secure_password_here"
+    ```
+2.  **Run the setup script** using the `-E` flag to preserve the variables:
+    ```bash
+    sudo -E ./setup.sh --all
+    ```
 ## Contributing
 
 Contributions are welcome\! Please see the `CONTRIBUTING.md` file for guidelines on how to add new modules and submit changes. This project follows Semantic Versioning.

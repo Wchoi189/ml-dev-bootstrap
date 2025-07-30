@@ -144,38 +144,24 @@ update_package_cache() {
 }
 
 install_packages() {
-    local packages=("$@")
+    local packages_to_install=("$@")
     
-    if [[ ${#packages[@]} -eq 0 ]]; then
+    if [[ ${#packages_to_install[@]} -eq 0 ]]; then
         log_warn "No packages specified for installation"
         return 0
     fi
     
-    log_info "Installing packages: ${packages[*]}"
+    log_info "Ensuring the following packages are installed: ${packages_to_install[*]}"
     
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
-        log_info "[DRY RUN] Would install: ${packages[*]}"
+        log_info "[DRY RUN] Would install: ${packages_to_install[*]}"
         return 0
     fi
     
-    # Check which packages are already installed
-    local to_install=()
-    for package in "${packages[@]}"; do
-        if ! dpkg -l | grep -q "^ii  $package "; then
-            to_install+=("$package")
-        else
-            log_debug "Package already installed: $package"
-        fi
-    done
-    
-    if [[ ${#to_install[@]} -eq 0 ]]; then
-        log_info "All packages already installed"
-        return 0
-    fi
-    
-    log_info "Installing new packages: ${to_install[*]}"
-    DEBIAN_FRONTEND=noninteractive apt install -y "${to_install[@]}" || {
-        log_error "Failed to install packages: ${to_install[*]}"
+    # Let apt handle checking for existing packages and installing only what's new.
+    # This is generally faster than checking each one with dpkg beforehand.
+    DEBIAN_FRONTEND=noninteractive apt install -y "${packages_to_install[@]}" || {
+        log_error "Failed to install one or more packages: ${packages_to_install[*]}"
         return 1
     }
 }
