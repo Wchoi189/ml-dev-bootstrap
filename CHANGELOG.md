@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2025-08-24
+
+### Added
+
+- Environment Manager (envmgr):
+    - System-wide Poetry install to `/opt/pypoetry` with dev-group permissions and global shim at `/usr/local/bin/poetry`.
+    - Fallback Poetry installation using a dedicated venv when the official installer fails.
+    - Global PATH profile `/etc/profile.d/ml-dev-tools.sh` to ensure `/usr/local/bin`, `/opt/pypoetry/bin`, and `$HOME/.local/bin` are available across shells.
+
+### Changed
+
+- Hardened config sourcing across modules using BASH_SOURCE to resolve `config/defaults.conf` reliably.
+- Pyenv and Pipenv modules now enforce dev-group permissions and create global shims when running as root.
+
+### Fixed
+
+- Resolved permission holes causing installs to be root-only and inaccessible to other users.
+- Fixed path bugs where modules sourced `../config/defaults.conf` incorrectly when executed from different locations.
+
 ## [0.2.0] - 2025-07-30
 
 ### Added

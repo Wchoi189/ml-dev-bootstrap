@@ -5,10 +5,11 @@
 # Updates conda and configures it for development use
 # =============================================================================
 
-# Source common configuration
-if [[ -f "$SCRIPT_DIR/config/defaults.conf" ]];
-then
-    source "$SCRIPT_DIR/config/defaults.conf"
+# Resolve repo root and source config robustly
+MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$MODULE_DIR/.." && pwd)"
+if [[ -f "$REPO_ROOT/config/defaults.conf" ]]; then
+    source "$REPO_ROOT/config/defaults.conf"
 fi
 
 

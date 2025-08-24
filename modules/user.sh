@@ -58,6 +58,37 @@ run_user() {
     local current_step=0
     
     # Step 1: Validate user configuration
+
+    # Enforce umask for group-writable files
+    umask 002
+
+    # Ensure the dev group exists
+    if ! getent group "$DEV_GROUP" > /dev/null; then
+        log_info "Group $DEV_GROUP does not exist. Creating..."
+        groupadd "$DEV_GROUP"
+    fi
+
+    # Function to set setgid and group ownership recursively
+    ensure_dev_group_permissions() {
+        local target_dir="$1"
+        chgrp -R "$DEV_GROUP" "$target_dir"
+        chmod -R g+rw "$target_dir"
+        find "$target_dir" -type d -exec chmod g+s {} +
+    }
+
+    # After creating user directories, enforce group and setgid
+    for dir in "${USER_DIRECTORIES[@]}"; do
+        mkdir -p "$DEV_HOME/$dir"
+        chgrp "$DEV_GROUP" "$DEV_HOME/$dir"
+        chmod 2775 "$DEV_HOME/$dir"  # setgid for directories
+    done
+    for dir in "${DEV_DIRECTORIES[@]}"; do
+        mkdir -p "$DEV_HOME/$dir"
+        chgrp "$DEV_GROUP" "$DEV_HOME/$dir"
+        chmod 2775 "$DEV_HOME/$dir"
+    done
+    # Optionally, enforce recursively for all home
+    # ensure_dev_group_permissions "$DEV_HOME"
     ((current_step++))
     log_step $current_step $total_steps "Validating user configuration"
     validate_user_config || {

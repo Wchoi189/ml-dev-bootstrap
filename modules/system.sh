@@ -101,6 +101,14 @@ run_system() {
         log_error "Failed to install packages"
         return 1
     }
+
+    # Step 2b: Install pyenv build dependencies
+    log_info "Installing pyenv build dependencies (for Python compilation)..."
+    apt-get update
+    apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev \
+        libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+        xz-utils tk-dev libffi-dev liblzma-dev make gcc
+    log_info "pyenv build dependencies installed."
     
     # Step 3: Basic system configuration
     log_info "Step 3/3: Basic system configuration"
@@ -144,18 +152,26 @@ show_installed_packages() {
 
 update_system_packages() {
     log_info "Updating package cache and upgrading existing packages..."
-    
+
+    # Update apt sources to Kakao (Korea) mirror
+    if [[ -f /etc/apt/sources.list ]]; then
+        log_info "Backing up current apt sources.list..."
+        cp /etc/apt/sources.list /etc/apt/sources.list.bak
+        log_info "Updating apt sources to use Kakao (Korea) mirrors..."
+        sed -i 's|http://[a-zA-Z0-9.\-]*/ubuntu|http://mirror.kakao.com/ubuntu|g' /etc/apt/sources.list
+    fi
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would run: apt update && apt upgrade"
         return 0
     fi
-    
+
     # Update package cache
     apt update || {
         log_error "Failed to update package cache"
         return 1
     }
-    
+
     # Upgrade existing packages automatically
     if [[ "${AUTO_UPGRADE:-true}" == "true" ]]; then
         DEBIAN_FRONTEND=noninteractive apt upgrade -y || {
@@ -164,7 +180,7 @@ update_system_packages() {
     else
         log_info "Skipping package upgrade (AUTO_UPGRADE=false)"
     fi
-    
+
     return 0
 }
 

@@ -42,8 +42,13 @@ run_prompt() {
     
     # --- THIS IS THE FIX ---
     # Source common configuration to ensure variables are loaded
-    if [[ -f "$SCRIPT_DIR/config/defaults.conf" ]]; then
-        source "$SCRIPT_DIR/config/defaults.conf"
+    # Resolve repo root robustly for config sourcing
+    local _MOD_DIR
+    _MOD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local _REPO_ROOT
+    _REPO_ROOT="$(cd "$_MOD_DIR/.." && pwd)"
+    if [[ -f "$_REPO_ROOT/config/defaults.conf" ]]; then
+        source "$_REPO_ROOT/config/defaults.conf"
     fi
 
     # Validate required user and home directory variables

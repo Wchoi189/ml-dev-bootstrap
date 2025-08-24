@@ -73,14 +73,15 @@ LOG_LEVEL=${LOG_LEVEL:-INFO}
 # )
 
 # Module execution order (important for dependencies)
-MODULE_ORDER=("system" "locale" "user" "conda" "prompt" "git")
+MODULE_ORDER=("system" "locale" "user" "envmgr" "prompt" "git")
 
 # Add this near the top of setup.sh after the MODULE_ORDER definition
 declare -A MODULES=(
     ["system"]="System development tools and apt updates"
     ["locale"]="Locale configuration (English/Korean)"
     ["user"]="User and group creation with permissions"
-    ["conda"]="Conda environment updates"
+    ["envmgr"]="Python environment managers (Conda, Micromamba, Poetry, Pipenv, Pyenv)"
+    ["conda"]="(alias) Backward compatibility for conda module"
     ["prompt"]="Color shell prompt configuration"
     ["git"]="Git configuration setup"
 )
@@ -148,12 +149,12 @@ show_menu() {
             ((i++))
         done
         echo
-        echo "a) Run all modules"
+        echo "a) Run all modules (skips envmgr by default)"
+        echo "e) Run environment manager(s) (multi-select)"
         echo "c) Show configuration"
         echo "q) Quit"
         echo
         read -p "Select option: " choice
-        
         case $choice in
             [1-6])
                 local module_index=$((choice - 1))
@@ -162,7 +163,49 @@ show_menu() {
                 read -p "Press Enter to continue..."
                 ;;
             a|A)
-                execute_all_modules
+                # Run all except envmgr
+                for m in "${MODULE_ORDER[@]}"; do
+                    [[ "$m" == "envmgr" ]] && continue
+                    execute_module "$m"
+                done
+                read -p "Press Enter to continue..."
+                ;;
+            e|E)
+                echo "Select environment managers to install (comma-separated, e.g. 1,2):"
+                local env_opts=("conda" "micromamba" "pyenv" "poetry" "pipenv")
+                for idx in "${!env_opts[@]}"; do
+                    printf "%d) %s\n" $((idx+1)) "${env_opts[$idx]}"
+                done
+                read -p "Your choice: " env_choice
+                IFS=',' read -ra env_indices <<< "$env_choice"
+        export SELECTED_ENVMGRS=""
+                local pyenv_selected=false
+                for idx in "${env_indices[@]}"; do
+                    idx_trimmed="$(echo $idx | xargs)"
+                    if [[ $idx_trimmed =~ ^[1-5]$ ]]; then
+                        local env_name="${env_opts[$((idx_trimmed-1))]}"
+            export SELECTED_ENVMGRS+="$env_name,"
+                        if [[ "$env_name" == "pyenv" ]]; then
+                            pyenv_selected=true
+                            export INSTALL_PYENV=yes
+                        fi
+                    fi
+                done
+        # Trim any trailing comma to avoid empty entries
+        SELECTED_ENVMGRS="${SELECTED_ENVMGRS%,}"
+                if [[ -z "$SELECTED_ENVMGRS" ]]; then
+                    log_warn "No valid selections made."
+                    read -p "Press Enter to continue..."
+                    continue
+                fi
+                if [[ "$pyenv_selected" == true ]]; then
+                    read -p "Enter Python version to install with pyenv (leave blank for default): " pyver
+                    if [[ -n "$pyver" ]]; then
+                        export PYENV_PYTHON_VERSION="$pyver"
+                        echo "Will install Python version: $pyver with pyenv."
+                    fi
+                fi
+                execute_module "envmgr"
                 read -p "Press Enter to continue..."
                 ;;
             c|C)
@@ -182,47 +225,42 @@ show_menu() {
 }
 
 execute_all_modules() {
-    log_info "Executing all modules in order..."
+    log_info "Executing all modules in order (skipping envmgr by default)..."
     for module in "${MODULE_ORDER[@]}"; do
+        [[ "$module" == "envmgr" ]] && continue
         execute_module "$module" || {
             log_error "Failed to execute module: $module"
             return 1
         }
     done
-    log_success "All modules completed successfully!"
+    log_success "All modules (except envmgr) completed successfully!"
 }
 
 execute_module() {
     local module="$1"
+    # Backward compatibility: allow 'conda' to call 'envmgr'
+    if [[ "$module" == "conda" ]]; then
+        module="envmgr"
+    fi
     local module_file="$MODULES_DIR/${module}.sh"
-    
     if [[ ! -f "$module_file" ]]; then
         log_error "Module file not found: $module_file"
         return 1
     fi
-    
     log_info "Executing module: $module"
-    
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would execute: $module_file"
         return 0
     fi
-    
-    # Source the module file
     if ! source "$module_file"; then
         log_error "Failed to source module file: $module_file"
         return 1
     fi
-    
-    # Check if the run function exists
     if ! declare -f "run_${module}" > /dev/null; then
         log_error "Function run_${module} not found in $module_file"
         return 1
     fi
-    
-    # Execute the module function directly
     log_debug "Starting run_${module} function..."
-    
     if "run_${module}"; then
         log_success "Module $module completed successfully"
         return 0
@@ -391,6 +429,11 @@ run_full_diagnostics() {
     fi
     echo ""
     
+    # PATH diagnostics
+    log_info "=== PATH Diagnostics ==="
+    diagnose_path_issues
+    echo ""
+
     # Git diagnostics
     log_info "=== Git Diagnostics ==="
     if check_command "git"; then
@@ -436,6 +479,67 @@ run_full_diagnostics() {
     fi
     
     log_separator
+}
+
+# Verify PATH contains expected locations and tools are resolvable
+diagnose_path_issues() {
+    echo "Current PATH:"
+    echo "  $PATH"
+    echo ""
+
+    local expected_paths=(
+        "/usr/local/bin"
+        "/opt/pypoetry/bin"
+        "$HOME/.local/bin"
+        "/opt/conda/bin"
+    )
+    echo "Expected PATH entries:"
+    for p in "${expected_paths[@]}"; do
+        local in_path="no"
+        if echo ":$PATH:" | grep -q ":$p:"; then in_path="yes"; fi
+        local exists="no"
+        [[ -d "$p" ]] && exists="yes"
+        printf "  - %-20s exists=%s in_PATH=%s\n" "$p" "$exists" "$in_path"
+    done
+    echo ""
+
+    echo "Tool resolution:"
+    local tools=(poetry pyenv pipenv conda)
+    for t in "${tools[@]}"; do
+        if command -v "$t" >/dev/null 2>&1; then
+            local resolved
+            resolved="$(command -v "$t" 2>/dev/null)"
+            printf "  ✓ %-8s -> %s\n" "$t" "$resolved"
+        else
+            printf "  ✗ %-8s not found in PATH\n" "$t"
+        fi
+    done
+    echo ""
+
+    echo "Profile scripts:"
+    local profiles=(
+        "/etc/profile.d/ml-dev-tools.sh"
+        "/etc/profile.d/poetry.sh"
+        "/etc/profile.d/pyenv.sh"
+    )
+    for f in "${profiles[@]}"; do
+        if [[ -f "$f" ]]; then
+            printf "  ✓ %s\n" "$f"
+        else
+            printf "  ✗ %s (missing)\n" "$f"
+        fi
+    done
+    echo ""
+
+    # Poetry symlink check (common issue)
+    if [[ -L "/usr/local/bin/poetry" ]]; then
+        echo "Poetry shim:"
+        echo "  /usr/local/bin/poetry -> $(readlink -f /usr/local/bin/poetry 2>/dev/null || echo 'unresolved')"
+    fi
+    echo ""
+
+    echo "Tips: If a tool was just installed but not found, refresh your shell:"
+    echo "  hash -r && exec \$SHELL -l"
 }
 
 # =============================================================================
@@ -546,15 +650,16 @@ enhanced_main() {
     ensure_script_permissions    
     # Initialize logging
     init_logging
-    
-    # Parse command line arguments (enhanced)
-    local modules_to_run=()
-    local show_menu_flag=false
+
+    # Initialize option flags to avoid unbound variable errors
     local run_all=false
+    local show_menu_flag=false
     local run_diagnostics=false
     local run_update=false
     local create_backup=false
-    
+    local modules_to_run=()
+
+    # Parse command line arguments (enhanced)
     while [[ $# -gt 0 ]]; do
         case $1 in
             -h|--help)
@@ -598,25 +703,31 @@ enhanced_main() {
                 create_backup=true
                 shift
                 ;;
-        --skip-upgrade)
+            --python-version)
+                if [[ -n "$2" ]]; then
+                    export PYENV_PYTHON_VERSION="$2"
+                    log_info "Requested Python version for pyenv: $2"
+                    shift 2
+                else
+                    log_error "--python-version requires an argument"
+                    exit 1
+                fi
+                ;;
+            --skip-upgrade)
                 export AUTO_UPGRADE=false
                 log_info "Skipping system package upgrade."
                 shift
                 ;;
-        --progress)
-                export SHOW_PROGRESS=true
-                shift
-                ;;                
             --progress)
                 export SHOW_PROGRESS=true
                 shift
                 ;;
-            -*)
+            -* )
                 log_error "Unknown option: $1"
                 show_usage
                 exit 1
                 ;;
-            *)
+            * )
                 # Check if it's a valid module
                 if [[ -n "${MODULES[$1]:-}" ]]; then
                     modules_to_run+=("$1")
@@ -680,6 +791,7 @@ OPTIONS:
     --diagnose          Run comprehensive diagnostics
     --update            Update environment components
     --backup            Create environment backup
+    --python-version X  Install specific Python version with pyenv (e.g. 3.11.8)
     --progress          Show detailed progress for --all
 
 MODULES:

@@ -19,8 +19,11 @@ run_git() {
     log_header "Git Configuration Setup"
 
     # Source common configuration to ensure variables are loaded
-    if [[ -f "$SCRIPT_DIR/config/defaults.conf" ]]; then
-        source "$SCRIPT_DIR/config/defaults.conf"
+    local _MOD_DIR _REPO_ROOT
+    _MOD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    _REPO_ROOT="$(cd "$_MOD_DIR/.." && pwd)"
+    if [[ -f "$_REPO_ROOT/config/defaults.conf" ]]; then
+        source "$_REPO_ROOT/config/defaults.conf"
     fi
 
     # Validate required user and home directory variables
