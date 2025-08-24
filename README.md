@@ -1,6 +1,6 @@
 # ml-dev-bootstrap
 
-[![Version](https://img.shields.io/badge/version-0.1.0--beta-blue)](https://github.com/Wchoi189/ml-dev-bootstrap/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0--beta-blue)](https://github.com/Wchoi189/ml-dev-bootstrap/releases)
 
 A modular setup utility for bootstrapping a development environment on a fresh Ubuntu system. It configures everything from system tools and users to conda, git, and shell prompts.
 
@@ -32,9 +32,17 @@ sudo ./setup.sh --menu
 
 ### Interactive Menu
 
-![Interactive menu showing all setup modules](docs/screenshots/menu-main.png)
+![Interactive menu showing all setup modules](docs/screenshots/main-menu.png)
 
 *The main menu lets you run all modules or pick specific components interactively.*
+
+---
+
+### System Development tools Installation
+
+![System Development Tools Installation menu option](docs/screenshots/option1.png)
+
+*Menu for installing core system development tools (Option 1).* 
 
 ---
 
@@ -42,7 +50,7 @@ sudo ./setup.sh --menu
 
 ![Environment manager selection prompt](docs/screenshots/envmgr-select.png)
 
-*Choose which Python environment managers to install, with multi-select support.*
+*Option e: Choose which Python environment managers to install, with multi-select support.*
 
 ---
 
@@ -54,46 +62,40 @@ sudo ./setup.sh --menu
 
 ---
 
+### User and Group Creation
+
+![User and Group Creation menu option](docs/screenshots/option3_user.png)
+
+*Preview of the user and group creation menu (Option 3).* 
+
+---
+
+### User and Group Creation(cont'd)
+
+![Additional user selection menu](docs/screenshots/option_3_user_2.png)
+
+*Selecting an additional user for group membership (Option 3, continued).* 
+
+---
+
+### User and Group Creation(cont'd)
+
+![Third user selection menu](docs/screenshots/option_3_user_3.png)
+
+*Selecting a third user for group membership (Option 3, continued).* 
+
+---
+
+### Color Shell Prompt Installation
+
+![Color Shell Prompt Installation menu option](docs/screenshots/option5.png)
+
+*Menu for installing a color shell prompt (Option 5).* 
+
+---
+
 ### PATH Diagnostics
 
-
----
-
-### Option 1: System Development tools Installation
-
-![Basic setup option screenshot](docs/screenshots/option1.png)
-
-*The Option 1: System Development tools Installation option as presented in the menu.*
-
----
-
-### Option 3: User and Group Creation
-
-![User environment selection screenshot](docs/screenshots/option3_user.png)
-
-*Option 3: User and Group Creation preview*
-
----
-
-### Option 3: User and Group Creation(cont'd)
-
-![Additional user selection screenshot](docs/screenshots/option_3_user_2.png)
-
----
-
-### Option 3: User and Group Creation(cont'd)
-
-![Third user selection screenshot](docs/screenshots/option_3_user_3.png)
-
----
-
-### Option 5: Color Shell Prompt Installation
-
-![Advanced options screenshot](docs/screenshots/option5.png)
-
-*Option 5: Color Shell Prompt Installation preview*
-
----
 
 ![PATH diagnostics output](docs/screenshots/diagnose-path1.png)
 
@@ -102,7 +104,6 @@ sudo ./setup.sh --menu
 ![PATH diagnostics output](docs/screenshots/diagnose-path3.png)
 
 ![PATH diagnostics output](docs/screenshots/diagnose-path4.png)
-
 
 ---
 
