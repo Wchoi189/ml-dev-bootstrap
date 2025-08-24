@@ -28,6 +28,84 @@ chmod +x setup.sh
 sudo ./setup.sh --menu
 ````
 
+## Screenshots
+
+### Interactive Menu
+
+![Interactive menu showing all setup modules](docs/screenshots/menu-main.png)
+
+*The main menu lets you run all modules or pick specific components interactively.*
+
+---
+
+### Environment Manager Selection
+
+![Environment manager selection prompt](docs/screenshots/envmgr-select.png)
+
+*Choose which Python environment managers to install, with multi-select support.*
+
+---
+
+### Poetry System Install Output
+
+![Poetry system-wide install output](docs/screenshots/poetry-install-success.png)
+
+*Poetry is installed system-wide with dev-group permissions and a global shim.*
+
+---
+
+### PATH Diagnostics
+
+
+---
+
+### Option 1: System Development tools Installation
+
+![Basic setup option screenshot](docs/screenshots/option1.png)
+
+*The Option 1: System Development tools Installation option as presented in the menu.*
+
+---
+
+### Option 3: User and Group Creation
+
+![User environment selection screenshot](docs/screenshots/option3_user.png)
+
+*Option 3: User and Group Creation preview*
+
+---
+
+### Option 3: User and Group Creation(cont'd)
+
+![Additional user selection screenshot](docs/screenshots/option_3_user_2.png)
+
+---
+
+### Option 3: User and Group Creation(cont'd)
+
+![Third user selection screenshot](docs/screenshots/option_3_user_3.png)
+
+---
+
+### Option 5: Color Shell Prompt Installation
+
+![Advanced options screenshot](docs/screenshots/option5.png)
+
+*Option 5: Color Shell Prompt Installation preview*
+
+---
+
+![PATH diagnostics output](docs/screenshots/diagnose-path1.png)
+
+![PATH diagnostics output](docs/screenshots/diagnose-path2.png)
+
+![PATH diagnostics output](docs/screenshots/diagnose-path3.png)
+
+![PATH diagnostics output](docs/screenshots/diagnose-path4.png)
+
+
+---
+
 ## Usage
 
 You can run the entire suite of modules or select specific ones.

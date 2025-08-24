@@ -397,6 +397,18 @@ show_setup_summary() {
 }
 
 # =============================================================================
+# Minimal system info for diagnostics (must be defined before use)
+show_system_info() {
+    echo "Hostname: $(hostname)"
+    echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -a)"
+    echo "Kernel: $(uname -r)"
+    echo "Uptime: $(uptime -p 2>/dev/null || echo N/A)"
+    echo "Current user: $(whoami)"
+    echo "Shell: $SHELL"
+    echo "Python: $(python3 --version 2>/dev/null || echo not found)"
+    echo "PATH: $PATH"
+}
+
 # Diagnostic and Troubleshooting Functions
 # =============================================================================
 
@@ -410,6 +422,17 @@ run_full_diagnostics() {
     log_info "=== System Diagnostics ==="
     show_system_info
     echo ""
+# Minimal system info for diagnostics
+show_system_info() {
+    echo "Hostname: $(hostname)"
+    echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -a)"
+    echo "Kernel: $(uname -r)"
+    echo "Uptime: $(uptime -p 2>/dev/null || echo N/A)"
+    echo "Current user: $(whoami)"
+    echo "Shell: $SHELL"
+    echo "Python: $(python3 --version 2>/dev/null || echo not found)"
+    echo "PATH: $PATH"
+}
     
     # User diagnostics
     log_info "=== User Diagnostics ==="
