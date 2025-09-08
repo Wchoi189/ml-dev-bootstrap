@@ -13,6 +13,147 @@ CONFIG_DIR="$SCRIPT_DIR/config"
 MODULES_DIR="$SCRIPT_DIR/modules"
 UTILS_DIR="$SCRIPT_DIR/utils"
 
+# Configuration
+CONFIG_FILE="$CONFIG_DIR/defaults.conf"
+[[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+
+# Default values (can be overridden by config file)
+USERNAME=${USERNAME:-dev-user}
+USER_GROUP=${USER_GROUP:-dev}
+USER_UID=${USER_UID:-1000}
+USER_GID=${USER_GID:-1000}
+DEFAULT_LOCALE=${DEFAULT_LOCALE:-en_US.UTF-8}
+GIT_USER_NAME=${GIT_USER_NAME:-Developer}
+GIT_USER_EMAIL=${GIT_USER_EMAIL:-dev@example.com}
+GIT_DEFAULT_BRANCH=${GIT_DEFAULT_BRANCH:-main}
+LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+# Module execution order (important for dependencies)
+MODULE_ORDER=("system" "locale" "user" "sources" "envmgr" "prompt" "git")
+
+# Module descriptions using individual variables
+MODULES_SYSTEM="System development tools and apt updates"
+MODULES_LOCALE="Locale configuration - English/Korean"
+MODULES_USER="User and group creation with permissions"
+MODULES_SOURCES="APT sources configuration for regional mirrors"
+MODULES_ENVMGR="Python environment managers - Conda, Micromamba, Poetry, Pipenv, Pyenv"
+MODULES_CONDA="Backward compatibility alias for conda module"
+MODULES_PROMPT="Color shell prompt configuration"
+MODULES_GIT="Git configuration setup"
+
+# =============================================================================
+# Utility Functions (must be defined before use)
+# =============================================================================
+
+# Function to get module description
+get_module_description() {
+    local module="$1"
+    local var_name="MODULES_${module^^}"  # Convert to uppercase
+    echo "${!var_name:-Unknown module}"
+}
+
+# Function to check if module is valid
+is_valid_module() {
+    local module="$1"
+    for valid_module in "${MODULE_ORDER[@]}"; do
+        if [[ "$module" == "$valid_module" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Basic logging functions (simplified versions)
+log_info() {
+    echo "[INFO] $*"
+}
+
+log_error() {
+    echo "[ERROR] $*" >&2
+}
+
+log_warn() {
+    echo "[WARN] $*" >&2
+}
+
+log_success() {
+    echo "[SUCCESS] $*"
+}
+
+log_debug() {
+    [[ "${LOG_LEVEL:-INFO}" == "DEBUG" ]] && echo "[DEBUG] $*" >&2
+}
+
+log_header() {
+    echo ""
+    echo "=== $* ==="
+    echo ""
+}
+
+log_separator() {
+    echo "----------------------------------------"
+}
+
+# Basic utility functions
+init_logging() {
+    # Initialize logging system
+    export LOG_LEVEL=${LOG_LEVEL:-INFO}
+}
+
+# Color helper functions for menu
+color_red() { echo -e "\033[0;31m$1\033[0m"; }
+color_green() { echo -e "\033[0;32m$1\033[0m"; }
+color_yellow() { echo -e "\033[1;33m$1\033[0m"; }
+color_blue() { echo -e "\033[0;34m$1\033[0m"; }
+color_purple() { echo -e "\033[0;35m$1\033[0m"; }
+color_cyan() { echo -e "\033[0;36m$1\033[0m"; }
+color_white() { echo -e "\033[1;37m$1\033[0m"; }
+color_bold() { echo -e "\033[1m$1\033[0m"; }
+
+# Menu styling functions
+menu_header() { echo -e "\033[1;36m$1\033[0m"; }
+menu_option() { echo -e "\033[0;32m$1\033[0;33m$2\033[0m"; }
+menu_highlight() { echo -e "\033[1;35m$1\033[0m"; }
+menu_separator() { echo -e "\033[0;37m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; }
+
+check_requirements() {
+    # Basic requirement checks
+    if [[ $EUID -ne 0 ]]; then
+        log_error "This script must be run as root"
+        exit 1
+    fi
+    
+    # Check if required directories exist
+    for dir in "$CONFIG_DIR" "$MODULES_DIR" "$UTILS_DIR"; do
+        if [[ ! -d "$dir" ]]; then
+            log_warn "Directory not found: $dir"
+        fi
+    done
+}
+
+check_command() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+check_user_exists() {
+    id "$1" >/dev/null 2>&1
+}
+
+confirm_action() {
+    local prompt="$1"
+    local default="${2:-n}"
+    local response
+    
+    read -p "$prompt [y/N]: " response
+    response=${response:-$default}
+    [[ "$response" =~ ^[Yy]$ ]]
+}
+
+update_package_cache() {
+    log_info "Updating package cache..."
+    apt update >/dev/null 2>&1
+}
+
 # Execute permissions for the script and modules
 ensure_script_permissions() {
     log_debug "Ensuring proper script permissions..."
@@ -39,58 +180,12 @@ ensure_script_permissions() {
     fi
 }
 
-# Load utilities
-source "$UTILS_DIR/common.sh"
-source "$UTILS_DIR/logger.sh"
-
-# Configuration
-CONFIG_FILE="$CONFIG_DIR/defaults.conf"
-[[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
-
-# Default values (can be overridden by config file)
-USERNAME=${USERNAME:-wb2x}
-USER_GROUP=${USER_GROUP:-dev}
-LOG_LEVEL=${LOG_LEVEL:-INFO}
-
-# Default configuration (add this section)
-# USERNAME=${USERNAME:-wb2x}
-# USER_GROUP=${USER_GROUP:-dev}
-# USER_UID=${USER_UID:-1000}
-# USER_GID=${USER_GID:-1000}
-# DEFAULT_LOCALE=${DEFAULT_LOCALE:-en_US.UTF-8}
-# GIT_USER_NAME=${GIT_USER_NAME:-Developer}
-# GIT_USER_EMAIL=${GIT_USER_EMAIL:-dev@example.com}
-# GIT_DEFAULT_BRANCH=${GIT_DEFAULT_BRANCH:-main}
-
-# Available modules
-# declare -A MODULES=(
-#     ["system"]="System development tools and apt updates"
-#     ["locale"]="Locale configuration (English/Korean)"
-#     ["user"]="User and group creation with permissions"
-#     ["conda"]="Conda environment updates"
-#     ["prompt"]="Color shell prompt configuration"
-#     ["git"]="Git configuration setup"
-# )
-
-# Module execution order (important for dependencies)
-MODULE_ORDER=("system" "locale" "user" "envmgr" "prompt" "git")
-
-# Add this near the top of setup.sh after the MODULE_ORDER definition
-declare -A MODULES=(
-    ["system"]="System development tools and apt updates"
-    ["locale"]="Locale configuration (English/Korean)"
-    ["user"]="User and group creation with permissions"
-    ["envmgr"]="Python environment managers (Conda, Micromamba, Poetry, Pipenv, Pyenv)"
-    ["conda"]="(alias) Backward compatibility for conda module"
-    ["prompt"]="Color shell prompt configuration"
-    ["git"]="Git configuration setup"
-)
 # =============================================================================
-# Functions
+# Main Functions
 # =============================================================================
 
 show_usage() {
-    cat << EOF
+    cat << 'EOF'
 Development Environment Setup Utility
 
 Usage: $0 [OPTIONS] [MODULES...]
@@ -101,22 +196,29 @@ OPTIONS:
     -m, --menu          Show interactive menu
     -l, --list          List available modules
     -c, --config        Show current configuration
+    -s, --switch-user   Switch to development user
     -d, --dry-run       Preview what would be executed
     -v, --verbose       Enable verbose logging
+    --verbose-output    Enable verbose logging with detailed output
+    --diagnose          Run comprehensive diagnostics
+    --update            Update environment components
+    --backup            Create environment backup
+    --python-version X  Install specific Python version with pyenv
+    --progress          Show detailed progress for --all
 
 MODULES:
 EOF
     for module in "${MODULE_ORDER[@]}"; do
-        printf "    %-12s %s\n" "$module" "${MODULES[$module]}"
+        printf "    %-12s %s\n" "$module" "$(get_module_description "$module")"
     done
     
-    cat << EOF
+    cat << 'EOF'
 
 EXAMPLES:
-    $0 --all                    # Run all modules
-    $0 --menu                   # Interactive menu
-    $0 system locale user       # Run specific modules
-    $0 --dry-run --all         # Preview all operations
+    ./setup.sh --all                    # Run all modules
+    ./setup.sh --menu                   # Interactive menu
+    ./setup.sh system locale user       # Run specific modules
+    ./setup.sh --dry-run --all         # Preview all operations
 
 EOF
 }
@@ -130,95 +232,161 @@ show_config() {
     echo "  Config File: $CONFIG_FILE"
 }
 
+switch_to_dev_user() {
+    local dev_user="${USERNAME:-dev-user}"
+    
+    # Check if user exists
+    if ! id "$dev_user" >/dev/null 2>&1; then
+        log_error "Development user '$dev_user' does not exist. Run the 'user' module first."
+        return 1
+    fi
+    
+    log_info "Switching to development user '$dev_user'..."
+    log_info "Setup files are available in multiple locations:"
+    log_info "  • ~/setup (symlink in your home directory)"
+    log_info "  • /opt/ml-dev-bootstrap (main location)"
+    log_info "  • /root/ml-dev-bootstrap (symlink for compatibility)"
+    echo
+    log_info "After switching, run: cd ~/setup && ./setup.sh --menu"
+    echo
+    read -p "Press Enter to switch to user '$dev_user' (or Ctrl+C to cancel): "
+    
+    # Switch to the user
+    log_info "Switching to user '$dev_user'..."
+    exec su - "$dev_user"
+}
+
 list_modules() {
     log_info "Available Modules:"
     for module in "${MODULE_ORDER[@]}"; do
-        printf "  %-12s %s\n" "$module" "${MODULES[$module]}"
+        printf "  %-12s %s\n" "$module" "$(get_module_description "$module")"
     done
 }
 
 show_menu() {
     while true; do
         clear
-        echo "=== Development Environment Setup Menu ==="
         echo
-        echo "Available modules:"
+        menu_separator
+        echo "        $(menu_header "🚀 DEVELOPMENT ENVIRONMENT SETUP")"
+        menu_separator
+        echo
+        echo "        $(color_cyan "Available Modules:")"
+        echo
         local i=1
         for module in "${MODULE_ORDER[@]}"; do
-            printf "%d) %-12s %s\n" $i "$module" "${MODULES[$module]}"
+            local desc="$(get_module_description "$module")"
+            printf "        $(color_green "%d)") $(color_yellow "%-12s") $(color_white "%s")\n" $i "$module" "$desc"
             ((i++))
         done
         echo
-        echo "a) Run all modules (skips envmgr by default)"
-        echo "e) Run environment manager(s) (multi-select)"
-        echo "c) Show configuration"
-        echo "q) Quit"
+        menu_separator
         echo
-        read -p "Select option: " choice
+        echo "        $(color_cyan "Quick Actions:")"
+        echo "        $(menu_option "a)" " Run all modules (skips envmgr by default)")"
+        echo "        $(menu_option "e)" " Run environment manager(s) (multi-select)")"
+        echo "        $(menu_option "u)" " Switch to development user")"
+        echo "        $(menu_option "c)" " Show configuration")"
+        echo "        $(menu_option "q)" " Quit")"
+        echo
+        menu_separator
+        echo
+        echo -n "        $(color_purple "Select option:") "
+        read -p "" choice
+        echo
         case $choice in
-            [1-6])
+            [1-7])
                 local module_index=$((choice - 1))
                 local selected_module="${MODULE_ORDER[$module_index]}"
+                echo "        $(color_blue "Executing module:") $(color_yellow "$selected_module")"
+                echo
                 execute_module "$selected_module"
-                read -p "Press Enter to continue..."
+                echo
+                echo -n "        $(color_purple "Press Enter to continue...")"
+                read -p ""
                 ;;
             a|A)
+                echo "        $(color_blue "Running all modules (skipping envmgr)...")"
+                echo
                 # Run all except envmgr
                 for m in "${MODULE_ORDER[@]}"; do
                     [[ "$m" == "envmgr" ]] && continue
                     execute_module "$m"
                 done
-                read -p "Press Enter to continue..."
+                echo
+                echo -n "        $(color_purple "Press Enter to continue...")"
+                read -p ""
                 ;;
             e|E)
-                echo "Select environment managers to install (comma-separated, e.g. 1,2):"
+                echo "        $(color_cyan "Select environment managers to install (comma-separated, e.g. 1,2):")"
+                echo
                 local env_opts=("conda" "micromamba" "pyenv" "poetry" "pipenv")
                 for idx in "${!env_opts[@]}"; do
-                    printf "%d) %s\n" $((idx+1)) "${env_opts[$idx]}"
+                    printf "        $(color_green "%d)") $(color_white "%s")\n" $((idx+1)) "${env_opts[$idx]}"
                 done
-                read -p "Your choice: " env_choice
+                echo
+                echo -n "        $(color_purple "Your choice:") "
+                read -p "" env_choice
+                echo
                 IFS=',' read -ra env_indices <<< "$env_choice"
-        export SELECTED_ENVMGRS=""
+                export SELECTED_ENVMGRS=""
                 local pyenv_selected=false
                 for idx in "${env_indices[@]}"; do
                     idx_trimmed="$(echo $idx | xargs)"
                     if [[ $idx_trimmed =~ ^[1-5]$ ]]; then
                         local env_name="${env_opts[$((idx_trimmed-1))]}"
-            export SELECTED_ENVMGRS+="$env_name,"
+                        export SELECTED_ENVMGRS+="$env_name,"
                         if [[ "$env_name" == "pyenv" ]]; then
                             pyenv_selected=true
                             export INSTALL_PYENV=yes
                         fi
                     fi
                 done
-        # Trim any trailing comma to avoid empty entries
-        SELECTED_ENVMGRS="${SELECTED_ENVMGRS%,}"
+                # Trim any trailing comma to avoid empty entries
+                SELECTED_ENVMGRS="${SELECTED_ENVMGRS%,}"
                 if [[ -z "$SELECTED_ENVMGRS" ]]; then
-                    log_warn "No valid selections made."
-                    read -p "Press Enter to continue..."
+                    echo "        $(color_red "No valid selections made.")"
+                    echo -n "        $(color_purple "Press Enter to continue...")"
+                    read -p ""
                     continue
                 fi
                 if [[ "$pyenv_selected" == true ]]; then
-                    read -p "Enter Python version to install with pyenv (leave blank for default): " pyver
+                    echo -n "        $(color_cyan "Enter Python version to install with pyenv (leave blank for default):") "
+                    read -p "" pyver
                     if [[ -n "$pyver" ]]; then
                         export PYENV_PYTHON_VERSION="$pyver"
-                        echo "Will install Python version: $pyver with pyenv."
+                        echo "        $(color_blue "Will install Python version:") $(color_yellow "$pyver") $(color_blue "with pyenv.")"
                     fi
                 fi
+                echo "        $(color_blue "Executing environment manager setup...")"
+                echo
                 execute_module "envmgr"
-                read -p "Press Enter to continue..."
+                echo
+                echo -n "        $(color_purple "Press Enter to continue...")"
+                read -p ""
+                ;;
+            u|U)
+                echo "        $(color_blue "Switching to development user...")"
+                echo
+                switch_to_dev_user
                 ;;
             c|C)
+                echo "        $(color_blue "Current Configuration:")"
+                echo
                 show_config
-                read -p "Press Enter to continue..."
+                echo
+                echo -n "        $(color_purple "Press Enter to continue...")"
+                read -p ""
                 ;;
             q|Q)
-                log_info "Exiting..."
+                echo "        $(color_green "Goodbye! 👋")"
+                echo
                 exit 0
                 ;;
             *)
-                log_warn "Invalid option: $choice"
-                sleep 1
+                echo "        $(color_red "Invalid option:") $(color_yellow "$choice")"
+                echo "        $(color_cyan "Please select a valid option from the menu.")"
+                sleep 2
                 ;;
         esac
     done
@@ -271,7 +439,6 @@ execute_module() {
     fi
 }
 
-
 detect_conda_installation() {
     log_info "Detecting conda installation..."
     
@@ -279,8 +446,8 @@ detect_conda_installation() {
     local conda_paths=(
         "/opt/conda/bin/conda"
         "/usr/bin/conda"
-        "/home/$DEV_USERNAME/miniconda3/bin/conda"
-        "$CONDA_PATH/bin/conda"
+        "/home/$USERNAME/miniconda3/bin/conda"
+        "${CONDA_PATH:-}/bin/conda"
     )
     
     for path in "${conda_paths[@]}"; do
@@ -311,8 +478,9 @@ setup_fresh_conda() {
     
     log_success "Fresh conda setup completed"
 }
+
 # =============================================================================
-# Final Integration Functions
+# Progress and Summary Functions
 # =============================================================================
 
 run_all_modules_with_progress() {
@@ -329,7 +497,6 @@ run_all_modules_with_progress() {
         ((completed_modules++))
         
         log_header "Module $completed_modules/$total_modules: ${module^}"
-        # Remove the problematic show_progress call
         log_info "Progress: $completed_modules/$total_modules modules"
         
         if execute_module "$module"; then
@@ -397,7 +564,9 @@ show_setup_summary() {
 }
 
 # =============================================================================
-# Minimal system info for diagnostics (must be defined before use)
+# System Information and Diagnostics
+# =============================================================================
+
 show_system_info() {
     echo "Hostname: $(hostname)"
     echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -a)"
@@ -408,9 +577,6 @@ show_system_info() {
     echo "Python: $(python3 --version 2>/dev/null || echo not found)"
     echo "PATH: $PATH"
 }
-
-# Diagnostic and Troubleshooting Functions
-# =============================================================================
 
 run_full_diagnostics() {
     log_header "Complete Environment Diagnostics"
@@ -422,17 +588,6 @@ run_full_diagnostics() {
     log_info "=== System Diagnostics ==="
     show_system_info
     echo ""
-# Minimal system info for diagnostics
-show_system_info() {
-    echo "Hostname: $(hostname)"
-    echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -a)"
-    echo "Kernel: $(uname -r)"
-    echo "Uptime: $(uptime -p 2>/dev/null || echo N/A)"
-    echo "Current user: $(whoami)"
-    echo "Shell: $SHELL"
-    echo "Python: $(python3 --version 2>/dev/null || echo not found)"
-    echo "PATH: $PATH"
-}
     
     # User diagnostics
     log_info "=== User Diagnostics ==="
@@ -440,6 +595,15 @@ show_system_info() {
         diagnose_user_issues
     else
         echo "User diagnostics not available (user module not loaded)"
+        # Basic user check
+        if check_user_exists "$USERNAME"; then
+            echo "✓ User '$USERNAME' exists"
+            echo "  Home: $(getent passwd "$USERNAME" | cut -d: -f6)"
+            echo "  Shell: $(getent passwd "$USERNAME" | cut -d: -f7)"
+            echo "  Groups: $(groups "$USERNAME" 2>/dev/null || echo "Cannot determine")"
+        else
+            echo "✗ User '$USERNAME' does not exist"
+        fi
     fi
     echo ""
     
@@ -449,6 +613,9 @@ show_system_info() {
         diagnose_locale_issues
     else
         echo "Locale diagnostics not available (locale module not loaded)"
+        echo "Current locale: ${LANG:-not set}"
+        echo "Available locales:"
+        locale -a 2>/dev/null | grep -E "(en_US|ko_KR)" | head -5 | sed 's/^/  /' || echo "  Cannot list locales"
     fi
     echo ""
     
@@ -462,7 +629,7 @@ show_system_info() {
     if check_command "git"; then
         echo "Git version: $(git --version)"
         echo "Git configuration:"
-        git config --global --list | head -10 | sed 's/^/  /'
+        git config --global --list 2>/dev/null | head -10 | sed 's/^/  /' || echo "  No global git config"
         echo ""
         
         if check_user_exists "$USERNAME"; then
@@ -483,6 +650,21 @@ show_system_info() {
         $DETECTED_CONDA_PATH/bin/conda env list 2>/dev/null | head -5 | sed 's/^/  /' || echo "  Cannot list environments"
     else
         echo "Conda not detected"
+        # Try to detect conda in common locations
+        local conda_locations=(
+            "/opt/conda"
+            "/usr/local/miniconda3"
+            "/home/$USERNAME/miniconda3"
+            "/home/$USERNAME/anaconda3"
+        )
+        echo "Checking common conda locations:"
+        for loc in "${conda_locations[@]}"; do
+            if [[ -d "$loc" ]]; then
+                echo "  ✓ Found: $loc"
+            else
+                echo "  ✗ Not found: $loc"
+            fi
+        done
     fi
     echo ""
     
@@ -495,11 +677,31 @@ show_system_info() {
         echo "✗ Prompt functions file missing"
     fi
     
-    if [[ -f "/home/$USERNAME/.bashrc" ]] && grep -q "bash_prompt_functions" "/home/$USERNAME/.bashrc"; then
+    if [[ -f "/home/$USERNAME/.bashrc" ]] && grep -q "bash_prompt_functions" "/home/$USERNAME/.bashrc" 2>/dev/null; then
         echo "✓ Prompt integrated in .bashrc"
     else
         echo "✗ Prompt not integrated in .bashrc"
     fi
+    echo ""
+    
+    # Environment managers diagnostics
+    log_info "=== Environment Managers Diagnostics ==="
+    local env_tools=("poetry" "pyenv" "pipenv" "conda" "micromamba")
+    for tool in "${env_tools[@]}"; do
+        if command -v "$tool" >/dev/null 2>&1; then
+            local version
+            case "$tool" in
+                poetry) version="$(poetry --version 2>/dev/null | cut -d' ' -f3 || echo 'unknown')" ;;
+                pyenv) version="$(pyenv --version 2>/dev/null | cut -d' ' -f2 || echo 'unknown')" ;;
+                pipenv) version="$(pipenv --version 2>/dev/null | cut -d' ' -f3 || echo 'unknown')" ;;
+                conda) version="$(conda --version 2>/dev/null | cut -d' ' -f2 || echo 'unknown')" ;;
+                micromamba) version="$(micromamba --version 2>/dev/null || echo 'unknown')" ;;
+            esac
+            printf "  ✓ %-12s %s\n" "$tool" "$version"
+        else
+            printf "  ✗ %-12s not found\n" "$tool"
+        fi
+    done
     
     log_separator
 }
@@ -515,6 +717,7 @@ diagnose_path_issues() {
         "/opt/pypoetry/bin"
         "$HOME/.local/bin"
         "/opt/conda/bin"
+        "/home/$USERNAME/.local/bin"
     )
     echo "Expected PATH entries:"
     for p in "${expected_paths[@]}"; do
@@ -522,19 +725,19 @@ diagnose_path_issues() {
         if echo ":$PATH:" | grep -q ":$p:"; then in_path="yes"; fi
         local exists="no"
         [[ -d "$p" ]] && exists="yes"
-        printf "  - %-20s exists=%s in_PATH=%s\n" "$p" "$exists" "$in_path"
+        printf "  - %-25s exists=%s in_PATH=%s\n" "$p" "$exists" "$in_path"
     done
     echo ""
 
     echo "Tool resolution:"
-    local tools=(poetry pyenv pipenv conda)
+    local tools=(poetry pyenv pipenv conda micromamba git python3)
     for t in "${tools[@]}"; do
         if command -v "$t" >/dev/null 2>&1; then
             local resolved
             resolved="$(command -v "$t" 2>/dev/null)"
-            printf "  ✓ %-8s -> %s\n" "$t" "$resolved"
+            printf "  ✓ %-12s -> %s\n" "$t" "$resolved"
         else
-            printf "  ✗ %-8s not found in PATH\n" "$t"
+            printf "  ✗ %-12s not found in PATH\n" "$t"
         fi
     done
     echo ""
@@ -544,6 +747,7 @@ diagnose_path_issues() {
         "/etc/profile.d/ml-dev-tools.sh"
         "/etc/profile.d/poetry.sh"
         "/etc/profile.d/pyenv.sh"
+        "/etc/environment"
     )
     for f in "${profiles[@]}"; do
         if [[ -f "$f" ]]; then
@@ -582,9 +786,11 @@ update_environment() {
     
     # Update conda
     if [[ -n "${DETECTED_CONDA_PATH:-}" ]] && confirm_action "Update conda?" "y"; then
-        source "$DETECTED_CONDA_PATH/etc/profile.d/conda.sh"
-        conda update -n base -c defaults conda -y || log_warn "Conda update failed"
-        conda update -n base --all -y || log_warn "Conda package updates failed"
+        if [[ -f "$DETECTED_CONDA_PATH/etc/profile.d/conda.sh" ]]; then
+            source "$DETECTED_CONDA_PATH/etc/profile.d/conda.sh"
+            conda update -n base -c defaults conda -y || log_warn "Conda update failed"
+            conda update -n base --all -y || log_warn "Conda package updates failed"
+        fi
     fi
     
     # Clean up
@@ -593,7 +799,7 @@ update_environment() {
         apt autoclean >/dev/null 2>&1
         
         if [[ -n "${DETECTED_CONDA_PATH:-}" ]]; then
-            conda clean --all -y >/dev/null 2>&1
+            "$DETECTED_CONDA_PATH/bin/conda" clean --all -y >/dev/null 2>&1 || true
         fi
     fi
     
@@ -664,13 +870,22 @@ EOF
 }
 
 # =============================================================================
-# Enhanced Main Function with New Options
+# Enhanced Main Function
 # =============================================================================
 
-# Update the main function to include new options
 enhanced_main() {
+    # Load utilities if they exist
+    if [[ -f "$UTILS_DIR/common.sh" ]]; then
+        source "$UTILS_DIR/common.sh"
+    fi
+
+    if [[ -f "$UTILS_DIR/logger.sh" ]]; then
+        source "$UTILS_DIR/logger.sh"
+    fi
+    
     # Ensure proper permissions first
     ensure_script_permissions    
+    
     # Initialize logging
     init_logging
 
@@ -705,6 +920,10 @@ enhanced_main() {
                 show_config
                 exit 0
                 ;;
+            -s|--switch-user)
+                switch_to_dev_user
+                exit 0
+                ;;
             -d|--dry-run)
                 export DRY_RUN=true
                 log_info "Dry run mode enabled"
@@ -714,8 +933,9 @@ enhanced_main() {
                 export LOG_LEVEL=DEBUG
                 shift
                 ;;
-            --diagnose)
-                run_diagnostics=true
+            --verbose-output)
+                export LOG_LEVEL=DEBUG
+                export VERBOSE_OUTPUT=true
                 shift
                 ;;
             --update)
@@ -745,6 +965,10 @@ enhanced_main() {
                 export SHOW_PROGRESS=true
                 shift
                 ;;
+            --diagnose)
+                run_diagnostics=true
+                shift
+                ;;
             -* )
                 log_error "Unknown option: $1"
                 show_usage
@@ -752,7 +976,7 @@ enhanced_main() {
                 ;;
             * )
                 # Check if it's a valid module
-                if [[ -n "${MODULES[$1]:-}" ]]; then
+                if is_valid_module "$1"; then
                     modules_to_run+=("$1")
                 else
                     log_error "Unknown module: $1"
@@ -794,57 +1018,7 @@ enhanced_main() {
 }
 
 # =============================================================================
-# Enhanced Usage Function
-# =============================================================================
-
-enhanced_show_usage() {
-    cat << EOF
-Development Environment Setup Utility v2.0
-
-Usage: $0 [OPTIONS] [MODULES...]
-
-OPTIONS:
-    -h, --help          Show this help message
-    -a, --all           Run all modules in order
-    -m, --menu          Show interactive menu
-    -l, --list          List available modules
-    -c, --config        Show current configuration
-    -d, --dry-run       Preview what would be executed
-    -v, --verbose       Enable verbose logging
-    --diagnose          Run comprehensive diagnostics
-    --update            Update environment components
-    --backup            Create environment backup
-    --python-version X  Install specific Python version with pyenv (e.g. 3.11.8)
-    --progress          Show detailed progress for --all
-
-MODULES:
-EOF
-    for module in "${MODULE_ORDER[@]}"; do
-        printf "    %-12s %s\n" "$module" "${MODULES[$module]}"
-    done
-    
-    cat << EOF
-
-EXAMPLES:
-    $0 --all --progress             # Run all modules with progress
-    $0 --menu                       # Interactive menu
-    $0 system locale user           # Run specific modules
-    $0 --dry-run --all             # Preview all operations
-    $0 --diagnose                   # Run diagnostics
-    $0 --update                     # Update environment
-    $0 --backup                     # Create backup
-
-TROUBLESHOOTING:
-    $0 --diagnose                   # Comprehensive diagnostics
-    $0 user --dry-run              # Test user module
-    $0 --verbose system            # Debug system module
-
-For more information, see the documentation or run with --diagnose.
-
-EOF
-}      
-# =============================================================================
-# Main
+# Legacy Main Function (for backward compatibility)
 # =============================================================================
 
 main() {
@@ -894,7 +1068,7 @@ main() {
                 ;;
             *)
                 # Check if it's a valid module
-                if [[ -n "${MODULES[$1]:-}" ]]; then
+                if is_valid_module "$1"; then
                     modules_to_run+=("$1")
                 else
                     log_error "Unknown module: $1"
@@ -925,6 +1099,9 @@ main() {
     fi
 }
 
-# Run main function
-# main "$@"
+# =============================================================================
+# Script Entry Point
+# =============================================================================
+
+# Run enhanced main function
 enhanced_main "$@"

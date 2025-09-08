@@ -63,6 +63,9 @@ run_envmgr() {
             conda)
                 if [[ -f "$MODULE_DIR/conda.sh" ]]; then
                     source "$MODULE_DIR/conda.sh"
+                    if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
+                        log_debug "Starting conda installation with verbose output enabled"
+                    fi
                     if run_conda; then installed+=("conda"); else failed+=("conda"); fi
                 else
                     log_error "conda.sh not found"
@@ -82,6 +85,9 @@ run_envmgr() {
                     if [[ "${LOG_LEVEL:-INFO}" != "DEBUG" ]]; then
                         export PYENV_QUIET_INSTALL=yes
                     fi
+                    if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
+                        log_debug "Starting pyenv installation with verbose output enabled"
+                    fi
                     install_pyenv "${PYENV_PYTHON_VERSION-}"
                     rc=$?
                     if [[ $rc -eq 0 ]]; then
@@ -100,6 +106,9 @@ run_envmgr() {
             poetry)
                 if [[ -f "$MODULE_DIR/poetry.sh" ]]; then
                     source "$MODULE_DIR/poetry.sh"
+                    if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
+                        log_debug "Starting poetry installation with verbose output enabled"
+                    fi
                     rc_poetry=0
                     install_poetry
                     rc_poetry=$?
@@ -119,6 +128,9 @@ run_envmgr() {
             pipenv)
                 if [[ -f "$MODULE_DIR/pipenv.sh" ]]; then
                     source "$MODULE_DIR/pipenv.sh"
+                    if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
+                        log_debug "Starting pipenv installation with verbose output enabled"
+                    fi
                     if install_pipenv; then installed+=("pipenv"); else failed+=("pipenv"); fi
                 else
                     log_error "pipenv.sh not found"
@@ -151,6 +163,10 @@ run_envmgr() {
             pyenv)
                 if command -v pyenv >/dev/null 2>&1; then
                     echo -n "  - pyenv: "; pyenv --version
+                    if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
+                        echo "    Python versions available:"
+                        pyenv versions --bare 2>/dev/null | sed 's/^/      /' || echo "      (none installed)"
+                    fi
                 else
                     echo "  - pyenv: installed (version unknown)"
                 fi
@@ -158,6 +174,10 @@ run_envmgr() {
             poetry)
                 if command -v poetry >/dev/null 2>&1; then
                     echo -n "  - poetry: "; poetry --version
+                    if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
+                        echo "    Configuration:"
+                        poetry config --list 2>/dev/null | head -5 | sed 's/^/      /' || echo "      (configuration not accessible)"
+                    fi
                 else
                     echo "  - poetry: installed (version unknown)"
                 fi

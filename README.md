@@ -1,24 +1,25 @@
 # ml-dev-bootstrap
 
-[![Version](https://img.shields.io/badge/version-0.2.0--beta-blue)](https://github.com/Wchoi189/ml-dev-bootstrap/releases)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue)](https://github.com/Wchoi189/ml-dev-bootstrap/releases)
 
-A modular setup utility for bootstrapping a development environment on a fresh Ubuntu system. It configures everything from system tools and users to conda, git, and shell prompts.
+A modular setup utility for bootstrapping a development environment on a fresh Ubuntu system. It configures everything from system tools and users to conda, git, and shell prompts with seamless user switching and permission management.
 
 ## Key Features
 
 -   ✅ **Modular Architecture**: Run the whole setup or pick just the components you need.
--   ✅ **User & System Config**: Sets up users, groups, locales, and essential development tools.
--   ✅ **Conda & Git Ready**: Configures conda environments and git settings with useful aliases.
--   ✅ **Beautiful Prompts**: Includes several informative shell prompt styles.
+-   ✅ **Smart User Management**: Creates development users with proper permissions and seamless switching.
+-   ✅ **APT Sources Configuration**: Configure regional mirrors for faster package downloads.
+-   ✅ **Multi-User Environment Managers**: Installs Poetry, Pyenv, and Pipenv with proper group permissions.
+-   ✅ **Flexible Permission System**: `/opt`-based setup with multiple access points for different user contexts.
+-   ✅ **Interactive Menu**: User-friendly menu with user switching capabilities.
 -   ✅ **Dry-run Mode**: Preview all changes before they are made.
--   ✅ **Interactive Menu**: A user-friendly menu to guide you through the setup.
--   ✅ **Multi-user Env Managers**: Installs Poetry, Pyenv, and Pipenv in a multi-user friendly way with dev-group permissions and global shims.
+-   ✅ **Comprehensive Logging**: Structured logging with configurable levels.
 
 ## Quick Start
 
 ```bash
 # Clone the repository
-git clone [https://github.com/Wchoi189/ml-dev-bootstrap.git](https://github.com/Wchoi189/ml-dev-bootstrap.git)
+git clone https://github.com/Wchoi189/ml-dev-bootstrap.git
 cd ml-dev-bootstrap
 
 # Make the script executable
@@ -26,7 +27,34 @@ chmod +x setup.sh
 
 # Run the complete setup using the interactive menu
 sudo ./setup.sh --menu
-````
+```
+
+## Enhanced Workflow
+
+### Step 1: System Setup (as root)
+```bash
+sudo ./setup.sh --all
+```
+
+### Step 2: Switch to Development User
+```bash
+sudo ./setup.sh --switch-user
+# Or manually: su - dev-user
+```
+
+### Step 3: Continue as User
+```bash
+cd ~/setup
+./setup.sh --menu  # User-specific configurations
+```
+
+## Access Points
+
+The setup is accessible from multiple locations for different contexts:
+
+- **System Admin**: `/root/ml-dev-bootstrap` (symlink)
+- **Development User**: `~/setup` (symlink)
+- **Direct Access**: `/opt/ml-dev-bootstrap` (main location)`
 
 ## Screenshots
 
@@ -38,11 +66,19 @@ sudo ./setup.sh --menu
 
 ---
 
-### System Development tools Installation
+### APT Sources Configuration
 
-![System Development Tools Installation menu option](docs/screenshots/option1.png)
+![APT sources configuration for regional mirrors](docs/screenshots/apt-sources.png)
 
-*Menu for installing core system development tools (Option 1).* 
+*Configure APT sources to use regional mirrors (Kakao, Naver, Daum, etc.) for faster downloads.*
+
+---
+
+### User Switching
+
+![User switching with permission delegation](docs/screenshots/switch-user.png)
+
+*Seamlessly switch to development user with proper permission delegation.*
 
 ---
 
@@ -66,7 +102,7 @@ sudo ./setup.sh --menu
 
 ![User and Group Creation menu option](docs/screenshots/option3_user.png)
 
-*Preview of the user and group creation menu (Option 3).* 
+*Preview of the user and group creation menu (Option 3).*
 
 ---
 

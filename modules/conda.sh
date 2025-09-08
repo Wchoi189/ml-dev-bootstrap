@@ -15,7 +15,7 @@ fi
 
 # Conda configuration
 CONDA_PATH="${CONDA_PATH:-/opt/conda}"
-DEV_HOME="${DEV_HOME:-/home/${USERNAME:-wb2x}}" 
+DEV_HOME="${DEV_HOME:-/home/${USERNAME:-dev-user}}" 
 CONDA_UPDATE="${CONDA_UPDATE:-true}"
 CONDA_CHANNELS="${CONDA_CHANNELS:-conda-forge}"
 
@@ -49,7 +49,7 @@ run_conda() {
     
     # Validate required variables 
     if [[ -z "${DEV_USERNAME:-}" ]]; then
-        DEV_USERNAME="${USERNAME:-wb2x}"
+        DEV_USERNAME="${USERNAME:-dev-user}"
         log_debug "Set DEV_USERNAME to: $DEV_USERNAME"
     fi
     
@@ -418,7 +418,6 @@ install_conda_base_packages() {
     log_success "Environment directory configured to assign new files to the '$DEV_GROUP' group."
     # --- END: EFFICIENT PERMISSIONS SETUP ---
 
-    [cite_start]log_info "Using GLOBAL_INSTALL_PROFILE: '${GLOBAL_INSTALL_PROFILE}'" [cite: 279]
 
     # Build the package list based on the global profile
     local python_version="${PYTHON_VERSION:-3.10.13}"
@@ -434,13 +433,8 @@ install_conda_base_packages() {
     # Add packages based on the GLOBAL_INSTALL_PROFILE
     case "${GLOBAL_INSTALL_PROFILE}" in
         "standard")
-            [cite_start]packages_to_install+=("${CONDA_DATA_PACKAGES[@]}") [cite: 280]
             ;;
         "full")
-            [cite_start]packages_to_install+=("${CONDA_DATA_PACKAGES[@]}") [cite: 281]
-            [cite_start]packages_to_install+=("${CONDA_DEV_PACKAGES[@]}") [cite: 281]
-            [cite_start]packages_to_install+=("${CONDA_OPTIONAL_PACKAGES[@]}") [cite: 281]
-            [cite_start]packages_to_install+=(${CONDA_ML_PACKAGES}) [cite: 281]
             ;;
     esac
 
@@ -458,7 +452,6 @@ install_conda_base_packages() {
     }
 
     log_success "Environment '${env_name}' created successfully."
-    [cite_start]log_info "To activate this environment, run: micromamba activate ${env_name}" [cite: 284]
     return 0
 }
 

@@ -53,7 +53,7 @@ run_prompt() {
 
     # Validate required user and home directory variables
     if [[ -z "${DEV_USERNAME:-}" ]]; then
-        DEV_USERNAME="${USERNAME:-wb2x}" # Fallback to system USER or a default
+        DEV_USERNAME="${USERNAME:-dev-user}" # Fallback to system USER or a default
         log_debug "Set DEV_USERNAME to: $DEV_USERNAME"
     fi
 
@@ -748,16 +748,16 @@ demo_prompt_styles() {
     echo ""
     
     echo "1. Simple style:"
-    echo "   wb2x@container:/home/wb2x$ "
+    echo "   dev-user@container:/home/dev-user$ "
     echo ""
     
     echo "2. Modern style:"
-    echo "   wb2x@container:/home/wb2x (main*) (myenv)"
+    echo "   dev-user@container:/home/dev-user (main*) (myenv)"
     echo "   $ "
     echo ""
     
     echo "3. Powerline style:"
-    echo "   wb2x@container  ~/project  main*  myenv "
+    echo "   dev-user@container  ~/project  main*  myenv "
     echo "   $ "
     echo ""
     

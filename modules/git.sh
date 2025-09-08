@@ -28,7 +28,7 @@ run_git() {
 
     # Validate required user and home directory variables
     if [[ -z "${DEV_USERNAME:-}" ]]; then
-        DEV_USERNAME="${USERNAME:-wb2x}"
+        DEV_USERNAME="${USERNAME:-dev-user}"
         log_debug "Set DEV_USERNAME to: $DEV_USERNAME"
     fi
     if [[ -z "${DEV_GROUP:-}" ]]; then

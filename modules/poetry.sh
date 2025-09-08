@@ -66,24 +66,33 @@ install_poetry() {
         fi
 
         # Ensure basic dependencies are present
+        log_debug "[poetry] Installing system dependencies..."
         if command -v apt >/dev/null 2>&1; then
             DEBIAN_FRONTEND=noninteractive apt update -y >/dev/null 2>&1 || true
             DEBIAN_FRONTEND=noninteractive apt install -y curl ca-certificates python3-venv python3-pip >/dev/null 2>&1 || true
+            log_debug "[poetry] System dependencies installed"
         fi
 
         umask 002
+        log_debug "[poetry] Creating installation directories..."
         mkdir -p "$opt_home" "$opt_home/bin"
 
         # Try official installer first
+        log_info "[poetry] Attempting official Poetry installer..."
         if env POETRY_HOME="$opt_home" bash -lc 'curl -sSL https://install.python-poetry.org | python3 -'; then
+            log_success "[poetry] Official installer succeeded"
             : # success
         else
             log_warn "[poetry] Official installer failed; attempting venv-based fallback"
+            log_debug "[poetry] Creating Python virtual environment..."
             # Fallback: install Poetry into a dedicated venv under /opt/pypoetry/venv
             if python3 -m venv "$opt_home/venv" 2>/dev/null; then
+                log_debug "[poetry] Upgrading pip and installing Poetry..."
                 "$opt_home/venv/bin/python" -m pip install --upgrade pip wheel >/dev/null 2>&1 || true
                 if "$opt_home/venv/bin/python" -m pip install --upgrade poetry >/dev/null 2>&1; then
+                    log_debug "[poetry] Creating symlink to Poetry binary..."
                     ln -sf "$opt_home/venv/bin/poetry" "$opt_home/bin/poetry"
+                    log_success "[poetry] Venv-based fallback succeeded"
                 else
                     log_error "[poetry] Fallback pip install failed"
                     return 1
@@ -95,6 +104,7 @@ install_poetry() {
         fi
 
         # Ensure permissions and PATH exposure
+        log_debug "[poetry] Setting up permissions and PATH..."
         ensure_dev_group_perms "$opt_home" "$dev_group"
 
         # Symlink binary into /usr/local/bin for all users

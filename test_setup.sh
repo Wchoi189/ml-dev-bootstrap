@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/utils/common.sh"
 source "$SCRIPT_DIR/utils/logger.sh"
 
 # Test configuration
-TEST_USER="test_wb2x"
+TEST_USER="test_dev-user"
 TEST_GROUP="test_dev"
 TEST_HOME="/home/$TEST_USER"
 
@@ -262,8 +262,8 @@ run_integration_test() {
     export DRY_RUN=true
     export USERNAME="$TEST_USER"
     export USER_GROUP="$TEST_GROUP"
-    export GIT_USER_NAME="wb2x"
-    export GIT_USER_EMAIL="wchoi189@gmail.com"
+    export GIT_USER_NAME="dev-user"
+    export GIT_USER_EMAIL="YOURUSERNAME@gmail.com"
     
     log_info "Running complete setup in dry-run mode..."
     

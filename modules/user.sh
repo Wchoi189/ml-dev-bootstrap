@@ -6,7 +6,7 @@
 # =============================================================================
 
 # User configuration (from config or defaults)
-DEV_USERNAME="${USERNAME:-wb2x}"
+DEV_USERNAME="${USERNAME:-dev-user}"
 DEV_USER_UID="${USER_UID:-1000}"
 DEV_USER_GID="${USER_GID:-1000}"
 DEV_GROUP="${USER_GROUP:-dev}"
@@ -538,8 +538,154 @@ configure_development_permissions() {
         log_debug "Created user local bin directory"
     fi
     
+    # Configure setup directory permissions for continued access
+    configure_setup_directory_permissions
+    
     log_success "Development permissions configured"
     return 0
+}
+
+configure_setup_directory_permissions() {
+    log_info "Configuring setup directory permissions for continued access..."
+    
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_info "[DRY RUN] Would configure setup directory permissions"
+        return 0
+    fi
+    
+    # Get the setup directory path (where this script is running from)
+    local setup_dir
+    if [[ -n "${SCRIPT_DIR:-}" ]]; then
+        setup_dir="$SCRIPT_DIR"
+    else
+        # Fallback: try to determine from current working directory or script location
+        setup_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    fi
+    
+    if [[ ! -d "$setup_dir" ]]; then
+        log_warn "Setup directory not found: $setup_dir"
+        return 1
+    fi
+    
+    log_debug "Configuring permissions for setup directory: $setup_dir"
+    
+    # Check if we're in /opt (preferred location)
+    if [[ "$setup_dir" == /opt/ml-dev-bootstrap ]]; then
+        log_debug "Setup directory is already in /opt - using optimal permissions"
+        ensure_opt_permissions "$setup_dir"
+    else
+        log_debug "Setup directory not in /opt - creating proper setup"
+        create_opt_setup "$setup_dir"
+    fi
+    
+    # Create user-friendly symlinks
+    create_user_symlinks
+    
+    log_success "Setup directory permissions configured for group access"
+    log_info "User '$DEV_USERNAME' can now continue running setup scripts"
+    log_info "Access via: ~/setup or /opt/ml-dev-bootstrap"
+    return 0
+}
+
+ensure_opt_permissions() {
+    local setup_dir="$1"
+    
+    log_debug "Ensuring optimal permissions for /opt setup directory"
+    
+    # Set proper ownership and permissions for /opt location
+    chown -R root:"$DEV_GROUP" "$setup_dir" 2>/dev/null || {
+        log_warn "Failed to set ownership on /opt setup directory"
+        return 1
+    }
+    
+    # Set directory permissions (775 with setgid)
+    find "$setup_dir" -type d -exec chmod 2775 {} \; 2>/dev/null || {
+        log_warn "Failed to set directory permissions"
+    }
+    
+    # Set file permissions (664 for regular files, 774 for scripts)
+    find "$setup_dir" -type f -not -name "*.sh" -exec chmod 664 {} \; 2>/dev/null || true
+    find "$setup_dir" -name "*.sh" -type f -exec chmod 774 {} \; 2>/dev/null || {
+        log_warn "Failed to set script permissions"
+    }
+    
+    log_debug "Optimal permissions set for /opt setup directory"
+}
+
+create_opt_setup() {
+    local current_dir="$1"
+    local opt_dir="/opt/ml-dev-bootstrap"
+    
+    log_info "Moving setup files to /opt for better accessibility"
+    
+    # Copy to /opt if not already there
+    if [[ "$current_dir" != "$opt_dir" ]]; then
+        if [[ ! -d "$opt_dir" ]]; then
+            cp -r "$current_dir" "$opt_dir" 2>/dev/null || {
+                log_error "Failed to copy setup files to /opt"
+                return 1
+            }
+        fi
+        
+        # Set permissions on /opt copy
+        ensure_opt_permissions "$opt_dir"
+        
+        # Replace current directory with symlink
+        if [[ -d "$current_dir" ]]; then
+            rm -rf "$current_dir" 2>/dev/null || true
+            ln -s "$opt_dir" "$current_dir" 2>/dev/null || {
+                log_warn "Failed to create symlink from $current_dir to $opt_dir"
+            }
+        fi
+    fi
+}
+
+create_user_symlinks() {
+    local opt_dir="/opt/ml-dev-bootstrap"
+    local user_home="/home/$DEV_USERNAME"
+    
+    log_debug "Creating user-friendly symlinks"
+    
+    # Create symlink in user's home directory
+    if [[ -d "$user_home" ]]; then
+        local user_symlink="$user_home/setup"
+        if [[ ! -L "$user_symlink" ]]; then
+            ln -s "$opt_dir" "$user_symlink" 2>/dev/null || {
+                log_debug "Failed to create user symlink: $user_symlink"
+            }
+        fi
+    fi
+    
+    # Ensure /opt symlink exists for backward compatibility
+    local opt_symlink="/opt/setup"
+    if [[ ! -L "$opt_symlink" ]]; then
+        ln -s "$opt_dir" "$opt_symlink" 2>/dev/null || true
+    fi
+}
+
+create_accessible_symlink() {
+    local setup_dir="$1"
+    local symlink_target="/opt/ml-dev-bootstrap"
+    
+    log_info "Creating accessible symlink at $symlink_target"
+    
+    # Create symlink in /opt (which is accessible to all users)
+    if [[ -d "/opt" ]]; then
+        ln -sf "$setup_dir" "$symlink_target" 2>/dev/null || {
+            log_warn "Failed to create symlink in /opt"
+            return 1
+        }
+        
+        # Set permissions on the symlink
+        chmod 755 "$symlink_target" 2>/dev/null || true
+        
+        log_success "Created symlink: $symlink_target -> $setup_dir"
+        log_info "Users can now access setup files via: $symlink_target"
+        return 0
+    else
+        log_warn "/opt directory not found, cannot create accessible symlink"
+        return 1
+    fi
 }
 
 configure_conda_permissions() {

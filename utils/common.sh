@@ -12,11 +12,36 @@
 check_requirements() {
     log_debug "Checking system requirements..."
     
-    # Check if running as root (required for most operations)
-    if [[ $EUID -ne 0 ]] && [[ "${ALLOW_NON_ROOT:-false}" != "true" ]]; then
-        log_error "This script must be run as root (use sudo)"
-        log_info "Or set ALLOW_NON_ROOT=true to bypass this check"
+    # Determine if root is required based on the operation
+    local requires_root=true
+    
+    # Check command line arguments to see if this is a user-only operation
+    if [[ $# -gt 0 ]]; then
+        case "$1" in
+            --config|--list|--help)
+                requires_root=false
+                ;;
+            envmgr|poetry|pyenv|pipenv)
+                # User-specific environment managers can run as user
+                requires_root=false
+                ;;
+        esac
+    fi
+    
+    # Also check if ALLOW_NON_ROOT is explicitly set
+    if [[ "${ALLOW_NON_ROOT:-false}" == "true" ]]; then
+        requires_root=false
+    fi
+    
+    # Check if running as root (required for system operations)
+    if [[ $requires_root == "true" && $EUID -ne 0 ]]; then
+        log_error "This operation requires root privileges (use sudo)"
+        log_info "For user-specific operations, try: ALLOW_NON_ROOT=true ./setup.sh <command>"
         exit 1
+    fi
+    
+    if [[ $requires_root == "false" && $EUID -ne 0 ]]; then
+        log_info "Running in user mode (non-root) - some operations may be limited"
     fi
     
     # Check if we're in a supported environment
@@ -405,4 +430,41 @@ cleanup_temp_files() {
 # Set up cleanup trap
 setup_cleanup_trap() {
     trap 'cleanup_temp_files; log_info "Script interrupted, cleaning up..."' INT TERM EXIT
+}
+
+# =============================================================================
+# User Management Functions
+# =============================================================================
+
+run_as_user() {
+    local target_user="$1"
+    local command="$2"
+    
+    if [[ -z "$target_user" || -z "$command" ]]; then
+        log_error "Usage: run_as_user <username> <command>"
+        return 1
+    fi
+    
+    # Check if user exists
+    if ! id "$target_user" >/dev/null 2>&1; then
+        log_error "User '$target_user' does not exist"
+        return 1
+    fi
+    
+    log_info "Running command as user '$target_user': $command"
+    
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_info "[DRY RUN] Would run as $target_user: $command"
+        return 0
+    fi
+    
+    # Use su to run command as the target user with proper environment
+    if su - "$target_user" -c "$command"; then
+        log_success "Command completed successfully as user '$target_user'"
+        return 0
+    else
+        local exit_code=$?
+        log_error "Command failed as user '$target_user' with exit code $exit_code"
+        return $exit_code
+    fi
 }

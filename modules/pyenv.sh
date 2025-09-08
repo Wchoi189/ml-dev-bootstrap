@@ -43,8 +43,30 @@ install_pyenv() {
 
     log_info "[pyenv] Target user: $target_user ($target_home)"
 
+    # Check if pyenv is already installed
+    if sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'command -v pyenv >/dev/null 2>&1'; then
+        log_info "[pyenv] pyenv already installed for $target_user"
+        # Check if requested Python versions are installed
+        if [[ -n "$override_versions_csv" ]]; then
+            log_debug "[pyenv] Checking requested versions: $override_versions_csv"
+            IFS=',' read -ra versions_to_check <<< "$override_versions_csv"
+            for ver in "${versions_to_check[@]}"; do
+                ver=$(echo "$ver" | xargs)  # trim whitespace
+                if sudo -H -u "$target_user" env HOME="$target_home" bash -lc "pyenv versions --bare | grep -q '^$ver$'"; then
+                    log_info "[pyenv] Python $ver already installed for $target_user"
+                else
+                    log_info "[pyenv] Python $ver not found, will install"
+                fi
+            done
+        fi
+        return 0
+    else
+        log_info "[pyenv] pyenv not found for $target_user, proceeding with installation"
+    fi
+
     # Ensure build dependencies for common Python builds
     if [[ "${DRY_RUN:-false}" != "true" ]]; then
+        log_debug "[pyenv] Installing build dependencies..."
         if command -v apt >/dev/null 2>&1; then
             DEBIAN_FRONTEND=noninteractive apt update -y >/dev/null 2>&1 || true
             DEBIAN_FRONTEND=noninteractive apt install -y build-essential curl git ca-certificates \
