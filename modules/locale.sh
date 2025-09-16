@@ -36,12 +36,50 @@ declare -a OPTIONAL_PACKAGES=(
     "language-pack-ko"
     "language-pack-ko-base"
 )
+
+# =============================================================================
+# Interactive Locale Selection
+# =============================================================================
+
+choose_default_locale() {
+    log_info "Choose default system locale:"
+    echo "1) English (en_US.UTF-8) - Recommended for development"
+    echo "2) Korean (ko_KR.UTF-8) - For Korean language interface"
+    echo ""
+    
+    local choice
+    while true; do
+        read -p "Enter your choice (1-2): " choice
+        case $choice in
+            1)
+                DEFAULT_LOCALE="en_US.UTF-8"
+                log_info "Selected English as default locale"
+                break
+                ;;
+            2)
+                DEFAULT_LOCALE="ko_KR.UTF-8"
+                log_info "Selected Korean as default locale"
+                break
+                ;;
+            *)
+                log_warn "Invalid choice. Please enter 1 or 2."
+                ;;
+        esac
+    done
+}
+
 # =============================================================================
 # Main Locale Setup Function
 # =============================================================================
 
 run_locale() {
     log_header "Locale Configuration Setup"
+    
+    # Interactive locale selection if enabled in config
+    if [[ "${INTERACTIVE_LOCALE_SELECTION:-no}" == "yes" && -z "${DEFAULT_LOCALE_CONFIGURED:-}" ]]; then
+        choose_default_locale
+        export DEFAULT_LOCALE_CONFIGURED=true
+    fi
     
     local total_steps=6
     local current_step=0

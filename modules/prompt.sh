@@ -51,21 +51,24 @@ run_prompt() {
         source "$_REPO_ROOT/config/defaults.conf"
     fi
 
-    # Validate required user and home directory variables
-    if [[ -z "${DEV_USERNAME:-}" ]]; then
-        DEV_USERNAME="${USERNAME:-dev-user}" # Fallback to system USER or a default
-        log_debug "Set DEV_USERNAME to: $DEV_USERNAME"
+    # Determine target user and home directory
+    local target_user target_home
+    if [[ $EUID -eq 0 ]]; then
+        # Running as root - configure for root user
+        target_user="root"
+        target_home="/root"
+        log_info "Configuring prompt for root user"
+    else
+        # Running as regular user - configure for dev-user
+        target_user="${DEV_USERNAME:-${USERNAME:-dev-user}}"
+        target_home="/home/$target_user"
+        log_info "Configuring prompt for user: $target_user"
     fi
 
-    if [[ -z "${DEV_GROUP:-}" ]]; then
-        DEV_GROUP="${USER_GROUP:-dev}" # Fallback to a default group
-        log_debug "Set DEV_GROUP to: $DEV_GROUP"
-    fi
-
-    if [[ -z "${DEV_HOME:-}" ]]; then
-        DEV_HOME="/home/$DEV_USERNAME"
-        log_debug "Set DEV_HOME to: $DEV_HOME"
-    fi
+    # Update DEV_* variables for compatibility with existing functions
+    DEV_USERNAME="$target_user"
+    DEV_HOME="$target_home"
+    DEV_GROUP="${DEV_GROUP:-${USER_GROUP:-dev}}"
     
     local total_steps=5
     local current_step=0

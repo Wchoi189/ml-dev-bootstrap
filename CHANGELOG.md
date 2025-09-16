@@ -2,6 +2,81 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2025-09-16
+
+### Added
+
+- **Major Codebase Refactoring**:
+  - Reduced main `setup.sh` from 1107 to 377 lines (66% reduction)
+  - Extracted modular components: `lib/menu.sh`, `lib/args.sh`, `lib/orchestrator.sh`, `modules/diagnostics.sh`
+  - Improved maintainability and code organization
+
+- **Enhanced Environment Manager Module**:
+  - Added installation context detection (root vs user execution)
+  - Context-aware behavior for system-wide vs user installations
+  - Updated description to clearly indicate "Pyenv default" installation
+  - Added `ENVMGR_CONTEXT_MODE` configuration option (auto/root-only/user-only/always)
+
+- **Interactive Locale Selection**:
+  - Added Korean/English locale choice during setup
+  - `INTERACTIVE_LOCALE_SELECTION` configuration option
+  - Improved user experience for multilingual environments
+
+- **Comprehensive User Management System**:
+  - Combined `r) Create user` and `u) Switch user` into single workflow
+  - Interactive user creation with username and password prompts
+  - Smart user detection (filters system users, shows UID ≥ 1000)
+  - Automatic switching to newly created users
+  - Enhanced submenu with create/switch options
+
+- **Menu System Improvements**:
+  - Moved `sources` module from main flow to quick action `s)`
+  - Updated module numbering and menu structure
+  - Better visual organization and user guidance
+
+- **System Enhancements**:
+  - Added `build-essential` to essential packages (always installed)
+  - Improved root user prompt configuration support
+  - Enhanced configuration options for all new features
+
+### Changed
+
+- **Menu Structure**:
+  - Removed separate user creation/switching options
+  - Consolidated into comprehensive user management workflow
+  - Updated quick actions layout and descriptions
+
+- **Module Order**:
+  - Removed `sources` from main `MODULE_ORDER` array
+  - Updated module numbering in interactive menu
+
+- **Configuration System**:
+  - Added new configuration options for enhanced features
+  - Improved configuration documentation and examples
+  - Better environment variable support
+
+### Fixed
+
+- **Prompt Configuration**:
+  - Fixed prompt setup for root user execution context
+  - Improved compatibility across different user environments
+
+- **User Management**:
+  - Resolved issues with user creation and switching workflow
+  - Better error handling for user-related operations
+
+### Enhanced
+
+- **User Experience**:
+  - More intuitive menu navigation and options
+  - Better feedback and status messages
+  - Streamlined workflows for common operations
+
+- **Documentation**:
+  - Updated README with new features and configuration options
+  - Improved usage examples and menu descriptions
+  - Added comprehensive changelog entries
+
 ## [0.3.0] - 2025-09-08
 
 ### Added

@@ -17,6 +17,7 @@ declare -a ESSENTIAL_PACKAGES=(
     "tree"
     "unzip"
     "zip"
+    "build-essential"
 )
 
 # Standard development tools (for "standard" and "full" profiles)
@@ -246,6 +247,9 @@ backup_file() {
     local file="$1"
     if [[ -f "$file" ]]; then
         cp "$file" "${file}.backup.$(date +%Y%m%d_%H%M%S)"
+        return 0
+    else
+        return 1
     fi
 }
 # =============================================================================

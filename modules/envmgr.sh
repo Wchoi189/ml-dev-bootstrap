@@ -27,6 +27,38 @@ if [[ -n "${PREV_INSTALL_PYENV}" ]]; then INSTALL_PYENV="$PREV_INSTALL_PYENV"; f
 
 run_envmgr() {
     log_header "Python Environment Manager Setup"
+    
+    # Check context mode configuration
+    local context_mode="${ENVMGR_CONTEXT_MODE:-auto}"
+    case "$context_mode" in
+        root-only)
+            if [[ $EUID -ne 0 ]]; then
+                log_info "ENVMGR_CONTEXT_MODE=root-only: Skipping installation (not running as root)"
+                return 0
+            fi
+            ;;
+        user-only)
+            if [[ $EUID -eq 0 ]]; then
+                log_info "ENVMGR_CONTEXT_MODE=user-only: Skipping installation (running as root)"
+                return 0
+            fi
+            ;;
+        always)
+            log_info "ENVMGR_CONTEXT_MODE=always: Installing regardless of context"
+            ;;
+        auto|*)
+            # Detect installation context
+            local is_root=false
+            local current_user="$(whoami)"
+            if [[ $EUID -eq 0 ]]; then
+                is_root=true
+                log_info "Running as root - installing environment managers system-wide"
+            else
+                log_info "Running as user $current_user - installing environment managers for current user"
+            fi
+            ;;
+    esac
+    
     local managers=("conda" "micromamba" "pyenv" "poetry" "pipenv")
     local selected=( )
 
@@ -223,37 +255,49 @@ run_envmgr() {
 # Create a global profile.d script to expose common tool paths
 ensure_global_envmgr_paths() {
     local profile_script="/etc/profile.d/ml-dev-tools.sh"
-    {
-        echo '# Added by ml-dev-bootstrap: ensure common dev tools on PATH'
-        echo 'export PATH="/usr/local/bin:$PATH"'
-        echo 'export PATH="/opt/pypoetry/bin:$PATH"'
-        echo 'export PATH="/opt/conda/bin:$PATH"'
-        echo 'export PATH="$HOME/.local/bin:$PATH"'
-    } > "$profile_script"
-    chmod 644 "$profile_script" 2>/dev/null || true
+    if [[ $EUID -eq 0 ]]; then
+        {
+            echo '# Added by ml-dev-bootstrap: ensure common dev tools on PATH'
+            echo 'export PATH="/usr/local/bin:$PATH"'
+            echo 'export PATH="/opt/pypoetry/bin:$PATH"'
+            echo 'export PATH="/opt/conda/bin:$PATH"'
+            echo 'export PATH="$HOME/.local/bin:$PATH"'
+        } > "$profile_script"
+        chmod 644 "$profile_script" 2>/dev/null || true
+        log_info "Created global PATH profile at $profile_script"
+    else
+        log_warn "Not running as root - skipping global PATH profile creation"
+        log_info "Consider running with sudo for system-wide PATH setup"
+    fi
 }
 
 # Create a profile script to initialize pyenv for all users when present
 ensure_pyenv_profile() {
     local profile_script="/etc/profile.d/pyenv.sh"
-    {
-        echo '# Added by ml-dev-bootstrap: pyenv initialization'
-        echo 'if [ -z "$PYENV_ROOT" ]; then'
-        echo '  if [ -L /usr/local/bin/pyenv ]; then'
-        echo '    _pyenv_exe="$(readlink -f /usr/local/bin/pyenv 2>/dev/null)"'
-        echo '    _pyenv_root="$(dirname "$(dirname "$_pyenv_exe")")"'
-        echo '    [ -d "$_pyenv_root" ] && export PYENV_ROOT="$_pyenv_root"'
-        echo '  fi'
-        echo 'fi'
-        echo 'if [ -z "$PYENV_ROOT" ] && [ -d "$HOME/.pyenv" ]; then'
-        echo '  export PYENV_ROOT="$HOME/.pyenv"'
-        echo 'fi'
-        echo 'if [ -n "$PYENV_ROOT" ]; then'
-        echo '  export PATH="$PYENV_ROOT/bin:$PATH"'
-        echo '  if command -v pyenv >/dev/null 2>&1; then'
-        echo '    eval "$(pyenv init -)" 2>/dev/null || true'
-        echo '  fi'
-        echo 'fi'
-    } > "$profile_script"
-    chmod 644 "$profile_script" 2>/dev/null || true
+    if [[ $EUID -eq 0 ]]; then
+        {
+            echo '# Added by ml-dev-bootstrap: pyenv initialization'
+            echo 'if [ -z "$PYENV_ROOT" ]; then'
+            echo '  if [ -L /usr/local/bin/pyenv ]; then'
+            echo '    _pyenv_exe="$(readlink -f /usr/local/bin/pyenv 2>/dev/null)"'
+            echo '    _pyenv_root="$(dirname "$(dirname "$_pyenv_exe")")"'
+            echo '    [ -d "$_pyenv_root" ] && export PYENV_ROOT="$_pyenv_root"'
+            echo '  fi'
+            echo 'fi'
+            echo 'if [ -z "$PYENV_ROOT" ] && [ -d "$HOME/.pyenv" ]; then'
+            echo '  export PYENV_ROOT="$HOME/.pyenv"'
+            echo 'fi'
+            echo 'if [ -n "$PYENV_ROOT" ]; then'
+            echo '  export PATH="$PYENV_ROOT/bin:$PATH"'
+            echo '  if command -v pyenv >/dev/null 2>&1; then'
+            echo '    eval "$(pyenv init -)" 2>/dev/null || true'
+            echo '  fi'
+            echo 'fi'
+        } > "$profile_script"
+        chmod 644 "$profile_script" 2>/dev/null || true
+        log_info "Created global pyenv profile at $profile_script"
+    else
+        log_warn "Not running as root - skipping global pyenv profile creation"
+        log_info "pyenv will be initialized per-user in their shell profile"
+    fi
 }
