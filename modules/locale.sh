@@ -25,7 +25,6 @@ declare -a LOCALE_PACKAGES=(
 declare -a FONT_PACKAGES=(
     "fontconfig"  # Add this for fc-cache command
     "fonts-nanum"
-    "fonts-nanum-coding"
     "fonts-nanum-extra"
     "fonts-dejavu-core"
     "fonts-liberation"
