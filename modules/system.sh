@@ -11,7 +11,7 @@ export NEEDRESTART_MODE=a
 # Essential packages (always installed)
 declare -a ESSENTIAL_PACKAGES=(
     "curl"
-    "git" 
+    "git"
     "vim"
     "htop"
     "tree"
@@ -88,14 +88,14 @@ declare -a SYSTEM_UTILITIES=(
 
 run_system() {
     log_header "System Development Tools Setup"
-    
+
     # Step 1: Update package cache
     log_info "Step 1/3: Updating system packages"
     update_system_packages || {
         log_error "Failed to update system packages"
         return 1
     }
-    
+
     # Step 2: Install packages based on profile
     log_info "Step 2/3: Installing packages (profile: ${INSTALL_PROFILE:-minimal})"
     install_packages_by_profile || {
@@ -110,14 +110,14 @@ run_system() {
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
         xz-utils tk-dev libffi-dev liblzma-dev make gcc
     log_info "pyenv build dependencies installed."
-    
+
     # Step 3: Basic system configuration
     log_info "Step 3/3: Basic system configuration"
     configure_basic_system || {
         log_error "Failed to configure system"
         return 1
     }
-    
+
     log_success "System setup completed successfully!"
     show_installed_packages
 }
@@ -127,11 +127,11 @@ configure_basic_system() {
         log_info "[DRY RUN] Would configure basic system settings"
         return 0
     fi
-    
+
     # Just basic cleanup
     apt autoremove -y >/dev/null 2>&1 || true
     apt autoclean >/dev/null 2>&1 || true
-    
+
     log_debug "Basic system configuration completed"
 }
 
@@ -188,11 +188,11 @@ update_system_packages() {
 install_packages_by_profile() {
     local packages_to_install=()
     local profile="${INSTALL_PROFILE:-minimal}"
-    
+
     # Always install essential packages
     packages_to_install+=("${ESSENTIAL_PACKAGES[@]}")
     log_info "Installing essential packages (${#ESSENTIAL_PACKAGES[@]} packages)"
-    
+
     case "$profile" in
         "minimal")
             log_info "Using minimal installation profile"
@@ -210,11 +210,11 @@ install_packages_by_profile() {
             log_warn "Unknown profile: $profile, using minimal"
             ;;
     esac
-    
+
     # Show what will be installed
     log_info "Total packages to install: ${#packages_to_install[@]}"
     log_debug "Packages: ${packages_to_install[*]}"
-    
+
     # Install the packages
     if [[ ${#packages_to_install[@]} -gt 0 ]]; then
         install_packages "${packages_to_install[@]}"
@@ -224,17 +224,17 @@ install_packages_by_profile() {
 install_packages() {
     local packages=("$@")
     log_info "Installing ${#packages[@]} packages..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would install: ${packages[*]}"
         return 0
     fi
-    
+
     DEBIAN_FRONTEND=noninteractive apt install -y "${packages[@]}" || {
         log_error "Package installation failed"
         return 1
     }
-    
+
     log_success "Packages installed successfully"
 }
 
@@ -258,47 +258,47 @@ backup_file() {
 
 verify_essential_packages() {
     log_debug "Verifying essential packages installation..."
-    
+
     local critical_commands=("curl" "wget" "git" "vim")
     local failed_commands=()
-    
+
     for cmd in "${critical_commands[@]}"; do
         if ! check_command "$cmd"; then
             failed_commands+=("$cmd")
         fi
     done
-    
+
     if [[ ${#failed_commands[@]} -gt 0 ]]; then
         log_error "Critical commands not available: ${failed_commands[*]}"
         return 1
     fi
-    
+
     log_debug "Essential packages verification passed"
     return 0
 }
 
 verify_build_environment() {
     log_debug "Verifying build environment..."
-    
+
     local build_commands=("gcc" "g++" "make" "cmake")
     local failed_commands=()
-    
+
     for cmd in "${build_commands[@]}"; do
         if ! check_command "$cmd"; then
             failed_commands+=("$cmd")
         fi
     done
-    
+
     if [[ ${#failed_commands[@]} -gt 0 ]]; then
         log_warn "Some build tools not available: ${failed_commands[*]}"
         return 1
     fi
-    
+
     # Test basic compilation
     if [[ "${DRY_RUN:-false}" != "true" ]]; then
         local test_file="/tmp/test_build_$$"
         echo 'int main(){return 0;}' > "${test_file}.c"
-        
+
         if gcc "${test_file}.c" -o "$test_file" 2>/dev/null; then
             log_debug "Build environment test compilation successful"
             rm -f "$test_file" "${test_file}.c"
@@ -308,14 +308,14 @@ verify_build_environment() {
             return 1
         fi
     fi
-    
+
     log_debug "Build environment verification passed"
     return 0
 }
 
 configure_development_tools() {
     log_debug "Configuring development tools..."
-    
+
     # Configure Python pip
     if check_command "pip3"; then
         log_debug "Upgrading pip to latest version"
@@ -323,7 +323,7 @@ configure_development_tools() {
             pip3 install --upgrade pip 2>/dev/null || log_warn "Failed to upgrade pip"
         fi
     fi
-    
+
     # Configure Node.js npm
     if check_command "npm"; then
         log_debug "Configuring npm"
@@ -331,7 +331,7 @@ configure_development_tools() {
             npm config set fund false 2>/dev/null || log_warn "Failed to configure npm"
         fi
     fi
-    
+
     return 0
 }
 
@@ -341,34 +341,34 @@ configure_development_tools() {
 
 configure_system_settings() {
     log_info "Configuring system settings..."
-    
+
     # Configure timezone if specified
     if [[ -n "${TIMEZONE:-}" ]]; then
         configure_timezone "$TIMEZONE"
     fi
-    
+
     # Configure system limits
     configure_system_limits
-    
+
     # Configure sudo settings
     configure_sudo_settings
-    
+
     # Clean up package cache
     cleanup_package_cache
-    
+
     return 0
 }
 
 configure_timezone() {
     local timezone="$1"
-    
+
     log_info "Setting timezone to: $timezone"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would set timezone to: $timezone"
         return 0
     fi
-    
+
     if [[ -f "/usr/share/zoneinfo/$timezone" ]]; then
         ln -sf "/usr/share/zoneinfo/$timezone" /etc/localtime
         echo "$timezone" > /etc/timezone
@@ -381,7 +381,7 @@ configure_timezone() {
 
 configure_system_limits() {
     log_debug "Configuring system limits..."
-    
+
     local limits_file="/etc/security/limits.conf"
     local limits_config="
 # Added by setup-utility
@@ -390,12 +390,12 @@ configure_system_limits() {
 * soft nproc 32768
 * hard nproc 32768
 "
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would configure system limits in $limits_file"
         return 0
     fi
-    
+
     if [[ -f "$limits_file" ]] && ! grep -q "Added by setup-utility" "$limits_file"; then
         backup_file "$limits_file"
         echo "$limits_config" >> "$limits_file"
@@ -407,7 +407,7 @@ configure_system_limits() {
 
 configure_sudo_settings() {
     log_debug "Configuring sudo settings..."
-    
+
     local sudoers_file="/etc/sudoers.d/setup-utility"
     local sudo_config="
 # Added by setup-utility
@@ -415,18 +415,18 @@ configure_sudo_settings() {
 %sudo   ALL=(ALL:ALL) ALL
 
 # Allow passwordless sudo for development group (if exists)
-%${USER_GROUP:-dev}   ALL=(ALL) NOPASSWD: /usr/bin/apt, /usr/bin/systemctl
+%${USER_GROUP:-vscode}   ALL=(ALL) NOPASSWD: /usr/bin/apt, /usr/bin/systemctl
 "
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would configure sudo settings"
         return 0
     fi
-    
+
     if [[ ! -f "$sudoers_file" ]]; then
         echo "$sudo_config" > "$sudoers_file"
         chmod 440 "$sudoers_file"
-        
+
         # Validate sudoers file
         if visudo -c -f "$sudoers_file" >/dev/null 2>&1; then
             log_debug "Sudo configuration added successfully"
@@ -442,15 +442,15 @@ configure_sudo_settings() {
 
 cleanup_package_cache() {
     log_debug "Cleaning up package cache..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would clean package cache"
         return 0
     fi
-    
+
     apt autoremove -y >/dev/null 2>&1 || log_warn "Failed to autoremove packages"
     apt autoclean >/dev/null 2>&1 || log_warn "Failed to clean package cache"
-    
+
     log_debug "Package cache cleaned"
 }
 
@@ -460,7 +460,7 @@ cleanup_package_cache() {
 
 show_system_info() {
     log_header "System Information"
-    
+
     echo "Operating System:"
     if [[ -f /etc/os-release ]]; then
         source /etc/os-release
@@ -468,13 +468,13 @@ show_system_info() {
         echo "  Version: $VERSION"
         echo "  ID: $ID"
     fi
-    
+
     echo ""
     echo "System Resources:"
     echo "  CPU Cores: $(nproc)"
     echo "  Memory: $(free -h | awk '/^Mem:/ {print $2}')"
     echo "  Disk Space: $(df -h / | awk 'NR==2 {print $4 " available of " $2}')"
-    
+
     echo ""
     echo "Installed Development Tools:"
     local tools=("gcc" "python3" "node" "git" "vim")
@@ -486,6 +486,6 @@ show_system_info() {
             echo "  $tool: Not installed"
         fi
     done
-    
+
     log_separator
 }

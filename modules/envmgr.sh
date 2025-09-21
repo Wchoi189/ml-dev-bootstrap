@@ -27,7 +27,7 @@ if [[ -n "${PREV_INSTALL_PYENV}" ]]; then INSTALL_PYENV="$PREV_INSTALL_PYENV"; f
 
 run_envmgr() {
     log_header "Python Environment Manager Setup"
-    
+
     # Check context mode configuration
     local context_mode="${ENVMGR_CONTEXT_MODE:-auto}"
     case "$context_mode" in
@@ -58,8 +58,8 @@ run_envmgr() {
             fi
             ;;
     esac
-    
-    local managers=("conda" "micromamba" "pyenv" "poetry" "pipenv")
+
+    local managers=("uv" "conda" "micromamba" "pyenv" "poetry" "pipenv")
     local selected=( )
 
     # Use SELECTED_ENVMGRS env var if set (from menu), else use config
@@ -92,6 +92,18 @@ run_envmgr() {
 
     for mgr in "${selected[@]}"; do
         case "$mgr" in
+            uv)
+                if [[ -f "$MODULE_DIR/uv.sh" ]]; then
+                    source "$MODULE_DIR/uv.sh"
+                    if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
+                        log_debug "Starting uv installation with verbose output enabled"
+                    fi
+                    if install_uv; then installed+=("uv"); else failed+=("uv"); fi
+                else
+                    log_error "uv.sh not found"
+                    failed+=("uv")
+                fi
+                ;;
             conda)
                 if [[ -f "$MODULE_DIR/conda.sh" ]]; then
                     source "$MODULE_DIR/conda.sh"

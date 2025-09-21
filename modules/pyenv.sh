@@ -87,7 +87,7 @@ install_pyenv() {
     fi
 
     # Delegate permissions to dev group and expose binary
-    local dev_group="${USER_GROUP:-dev}"
+    local dev_group="${USER_GROUP:-vscode}"
     if ! getent group "$dev_group" >/dev/null 2>&1; then
         log_info "[pyenv] Creating dev group '$dev_group'"
         groupadd "$dev_group" || true

@@ -18,25 +18,26 @@ CONFIG_FILE="$CONFIG_DIR/defaults.conf"
 [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
 
 # Default values (can be overridden by config file)
-USERNAME=${USERNAME:-dev-user}
-USER_GROUP=${USER_GROUP:-dev}
+USERNAME=${USERNAME:-vscode}
+USER_GROUP=${USER_GROUP:-vscode}
 USER_UID=${USER_UID:-1000}
 USER_GID=${USER_GID:-1000}
 DEFAULT_LOCALE=${DEFAULT_LOCALE:-en_US.UTF-8}
 GIT_USER_NAME=${GIT_USER_NAME:-Developer}
-GIT_USER_EMAIL=${GIT_USER_EMAIL:-dev@example.com}
+GIT_USER_EMAIL=${GIT_USER_EMAIL:-vscode@example.com}
 GIT_DEFAULT_BRANCH=${GIT_DEFAULT_BRANCH:-main}
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 
 # Module execution order (important for dependencies)
-MODULE_ORDER=("system" "locale" "envmgr" "prompt" "git")
+MODULE_ORDER=("system" "locale" "ssh" "envmgr" "prompt" "git")
 
 # Module descriptions using individual variables
 MODULES_SYSTEM="System development tools and apt updates"
 MODULES_LOCALE="Locale configuration - English/Korean"
 MODULES_USER="User and group creation with permissions"
 MODULES_SOURCES="APT sources configuration for regional mirrors"
-MODULES_ENVMGR="Python environment managers (Pyenv default - Conda, Micromamba, Poetry, Pipenv)"
+MODULES_SSH="SSH key generation, client configuration, and agent setup"
+MODULES_ENVMGR="Python environment managers (UV default - Conda, Micromamba, Pyenv, Poetry, Pipenv)"
 MODULES_CONDA="Backward compatibility alias for conda module"
 MODULES_PROMPT="Color shell prompt configuration"
 MODULES_GIT="Git configuration setup"
@@ -106,7 +107,7 @@ check_requirements() {
         log_error "This script must be run as root"
         exit 1
     fi
-    
+
     # Check if required directories exist
     for dir in "$CONFIG_DIR" "$MODULES_DIR" "$UTILS_DIR"; do
         if [[ ! -d "$dir" ]]; then
@@ -127,7 +128,7 @@ confirm_action() {
     local prompt="$1"
     local default="${2:-n}"
     local response
-    
+
     read -p "$prompt [y/N]: " response
     response=${response:-$default}
     [[ "$response" =~ ^[Yy]$ ]]
@@ -141,22 +142,22 @@ update_package_cache() {
 # Execute permissions for the script and modules
 ensure_script_permissions() {
     log_debug "Ensuring proper script permissions..."
-    
+
     # Make setup.sh executable
     chmod +x "$0" 2>/dev/null || true
-    
+
     # Make all module files executable
     if [[ -d "$MODULES_DIR" ]]; then
         find "$MODULES_DIR" -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
         log_debug "Module files made executable"
     fi
-    
+
     # Make utility files executable
     if [[ -d "$UTILS_DIR" ]]; then
         find "$UTILS_DIR" -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
         log_debug "Utility files made executable"
     fi
-    
+
     # Make test script executable
     if [[ -f "$SCRIPT_DIR/test_setup.sh" ]]; then
         chmod +x "$SCRIPT_DIR/test_setup.sh" 2>/dev/null || true
@@ -174,15 +175,15 @@ ensure_script_permissions() {
 
 update_environment() {
     log_header "Environment Update"
-    
+
     log_info "Updating development environment components..."
-    
+
     # Update system packages
     if confirm_action "Update system packages?" "y"; then
         update_package_cache
         DEBIAN_FRONTEND=noninteractive apt upgrade -y || log_warn "Some packages failed to upgrade"
     fi
-    
+
     # Update conda
     if [[ -n "${DETECTED_CONDA_PATH:-}" ]] && confirm_action "Update conda?" "y"; then
         if [[ -f "$DETECTED_CONDA_PATH/etc/profile.d/conda.sh" ]]; then
@@ -191,32 +192,32 @@ update_environment() {
             conda update -n base --all -y || log_warn "Conda package updates failed"
         fi
     fi
-    
+
     # Clean up
     if confirm_action "Clean up package caches?" "y"; then
         apt autoremove -y >/dev/null 2>&1
         apt autoclean >/dev/null 2>&1
-        
+
         if [[ -n "${DETECTED_CONDA_PATH:-}" ]]; then
             "$DETECTED_CONDA_PATH/bin/conda" clean --all -y >/dev/null 2>&1 || true
         fi
     fi
-    
+
     log_success "Environment update completed"
 }
 
 backup_environment() {
     local backup_dir="/tmp/dev-env-backup-$(date +%Y%m%d_%H%M%S)"
-    
+
     log_info "Creating environment backup in: $backup_dir"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create backup in: $backup_dir"
         return 0
     fi
-    
+
     mkdir -p "$backup_dir"
-    
+
     # Backup configuration files
     local config_files=(
         "/home/$USERNAME/.bashrc"
@@ -229,7 +230,7 @@ backup_environment() {
         "/etc/default/locale"
         "/etc/environment"
     )
-    
+
     for file in "${config_files[@]}"; do
         if [[ -f "$file" ]]; then
             local dest_dir="$backup_dir$(dirname "$file")"
@@ -237,7 +238,7 @@ backup_environment() {
             cp "$file" "$dest_dir/" 2>/dev/null || log_debug "Could not backup: $file"
         fi
     done
-    
+
     # Create backup manifest
     cat > "$backup_dir/manifest.txt" << EOF
 Development Environment Backup
@@ -262,7 +263,7 @@ To restore:
 2. Set proper ownership: chown -R $USERNAME:$USER_GROUP /home/$USERNAME
 3. Re-run setup modules if needed
 EOF
-    
+
     log_success "Environment backup created: $backup_dir"
     echo "Backup manifest: $backup_dir/manifest.txt"
     return 0
@@ -310,7 +311,7 @@ fi
 
     # Parse command line arguments using the args module
     parse_arguments "$@"
-    
+
     # Validate parsed arguments
     validate_arguments
 

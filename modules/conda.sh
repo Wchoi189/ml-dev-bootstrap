@@ -15,7 +15,7 @@ fi
 
 # Conda configuration
 CONDA_PATH="${CONDA_PATH:-/opt/conda}"
-DEV_HOME="${DEV_HOME:-/home/${USERNAME:-dev-user}}" 
+DEV_HOME="${DEV_HOME:-/home/${USERNAME:-vscode-user}}"
 CONDA_UPDATE="${CONDA_UPDATE:-true}"
 CONDA_CHANNELS="${CONDA_CHANNELS:-conda-forge}"
 
@@ -46,19 +46,19 @@ CONDA_DISABLE_LIBMAMBA="${CONDA_DISABLE_LIBMAMBA:-true}"
 # =============================================================================
 run_conda() {
     log_header "Conda Environment Setup"
-    
-    # Validate required variables 
+
+    # Validate required variables
     if [[ -z "${DEV_USERNAME:-}" ]]; then
-        DEV_USERNAME="${USERNAME:-dev-user}"
+        DEV_USERNAME="${USERNAME:-vscode-user}"
         log_debug "Set DEV_USERNAME to: $DEV_USERNAME"
     fi
-    
+
     if [[ -z "${DEV_GROUP:-}" ]];
 then
-        DEV_GROUP="${USER_GROUP:-dev}"
+        DEV_GROUP="${USER_GROUP:-vscode}"
         log_debug "Set DEV_GROUP to: $DEV_GROUP"
     fi
-    
+
     if [[ -z "${DEV_HOME:-}" ]];
 then
         DEV_HOME="/home/$DEV_USERNAME"
@@ -67,7 +67,7 @@ then
 
     local total_steps=5 # Reduced from 6
     local current_step=0
-    
+
     # Step 1: Detect conda installation
     ((current_step++))
     log_step $current_step $total_steps "Detecting conda installation"
@@ -85,14 +85,14 @@ then
         log_error "Failed to initialize micromamba shell"
         return 1
     }
-    
+
     # Accept Terms of Service AFTER detection
     accept_conda_terms ||
 {
         log_error "Failed to accept conda Terms of Service"
         return 1
     }
-    
+
     # Step 2: Update conda (skipped)
     if [[ "$CONDA_UPDATE" == "true" ]];
 then
@@ -101,7 +101,7 @@ then
     else
         log_info "Skipping conda update (CONDA_UPDATE=false)"
     fi
-    
+
     # Step 3
     ((current_step++))
     log_step $current_step $total_steps "Installing base packages"
@@ -110,7 +110,7 @@ then
         log_error "Failed to install base packages"
         return 1
     }
-    
+
     # Step 4: Configure conda for users
     ((current_step++))
     log_step $current_step $total_steps "Configuring conda for users"
@@ -119,7 +119,7 @@ then
         log_error "Failed to configure conda for users"
         return 1
     }
-    
+
     # Step 5: Verify conda installation
     ((current_step++))
     log_step $current_step $total_steps "Verifying conda installation"
@@ -128,7 +128,7 @@ then
         log_error "Conda verification failed"
         return 1
     }
-    
+
     log_success "Conda setup completed successfully!"
 show_conda_info
 }
@@ -183,14 +183,14 @@ install_conda() {
 
     # Download micromamba binary
     local micromamba_url="https://micro.mamba.pm/api/micromamba/linux-64/latest"
-    log_info "Downloading micromamba from: $micromamba_url" 
-    
+    log_info "Downloading micromamba from: $micromamba_url"
+
     if ! wget -q -O /tmp/micromamba.tar.bz2 --user-agent="Mozilla/5.0" "$micromamba_url";
 then
         log_error "Failed to download micromamba"
         return 1
     fi
-    
+
     # Extract micromamba to a system-wide location
     tar -xjvf /tmp/micromamba.tar.bz2 -C /usr/local/ bin/micromamba ||
 {
@@ -198,17 +198,17 @@ then
         rm -f /tmp/micromamba.tar.bz2
         return 1
     }
-    
+
     rm -f /tmp/micromamba.tar.bz2
 
     # Set up the conda prefix directory
     mkdir -p "$CONDA_PATH/bin"
-    
+
     # Link micromamba so our script can find 'conda' and 'mamba'
     ln -s /usr/local/bin/micromamba "$CONDA_PATH/bin/conda"
     ln -s /usr/local/bin/micromamba "$CONDA_PATH/bin/mamba"
-    
-     log_success "Micromamba installed successfully." 
+
+     log_success "Micromamba installed successfully."
     return 0
 }
 
@@ -222,22 +222,22 @@ get_conda_command() {
 
 update_conda() {
     log_info "Updating conda to latest version..."
-    
+
     local conda_cmd=$(get_conda_command)
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would update conda using: $conda_cmd"
         return 0
     fi
-    
+
     # Initialize conda for this shell session
     source "$DETECTED_CONDA_PATH/etc/profile.d/conda.sh" ||
 {
         log_error "Failed to initialize conda"
         return 1
     }
-    
+
     # Try normal update first
     log_command "$conda_cmd update -n base -c defaults conda -y"
     if "$conda_cmd" update -n base -c defaults conda -y;
@@ -245,7 +245,7 @@ then
         log_success "Conda updated successfully"
     else
         log_warn "Normal conda update failed, trying with conflict resolution..."
-        
+
         # Try with force reinstall to resolve conflicts
         log_command "$conda_cmd install -n base -c defaults conda --force-reinstall -y"
         if "$conda_cmd" install -n base -c defaults conda --force-reinstall -y;
@@ -257,14 +257,14 @@ then
             log_info "Current conda version: $current_version"
         fi
     fi
-    
-    # Clean conda cache regardless of update success 
+
+    # Clean conda cache regardless of update success
     log_command "$conda_cmd clean --all -y"
     "$conda_cmd" clean --all -y ||
 {
         log_warn "Failed to clean conda cache"
     }
-    
+
     return 0
 }
 
@@ -275,31 +275,31 @@ then
 set_conda_environment() {
     # Configure conda solver based on settings
     export CONDA_SOLVER="${CONDA_SOLVER:-classic}"
-    
+
     # Disable libmamba if configured to avoid GLIBCXX issues
     if [[ "${CONDA_DISABLE_LIBMAMBA:-true}" == "true" ]];
 then
         export CONDA_LIBMAMBA_SOLVER_NO_CHANNELS_FROM_INSTALLED=true
         log_debug "Libmamba solver disabled"
     fi
-    
+
     # Plugin and telemetry settings (configurable)
     if [[ "${CONDA_NO_PLUGINS:-true}" == "true" ]];
 then
         export CONDA_NO_PLUGINS=true
         log_debug "Conda plugins disabled"
     fi
-    
+
     if [[ "${CONDA_REPORT_ERRORS:-false}" == "false" ]];
 then
         export CONDA_REPORT_ERRORS=false
     fi
-    
+
     if [[ "${ANACONDA_ANON_USAGE:-false}" == "false" ]];
 then
         export ANACONDA_ANON_USAGE=false
     fi
-    
+
     log_debug "Conda environment configured: solver=$CONDA_SOLVER, plugins=${CONDA_NO_PLUGINS:-false}"
 }
 
@@ -309,7 +309,7 @@ show_conda_solver_config() {
     echo "  CONDA_SOLVER: ${CONDA_SOLVER}"
     echo "  CONDA_EXPERIMENTAL_SOLVER: ${CONDA_EXPERIMENTAL_SOLVER}"
     echo "  CONDA_DISABLE_LIBMAMBA: ${CONDA_DISABLE_LIBMAMBA}"
-    
+
     if [[ "$CONDA_DISABLE_LIBMAMBA" == "true" ]];
 then
         echo "  CONDA_LIBMAMBA_SOLVER_NO_CHANNELS_FROM_INSTALLED: true"
@@ -357,33 +357,33 @@ sed 's/^/  /'
 
 accept_conda_terms() {
     log_info "Accepting conda Terms of Service..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would accept conda ToS"
         return 0
     fi
-    
+
     # Check if DETECTED_CONDA_PATH is set
     if [[ -z "${DETECTED_CONDA_PATH:-}" ]];
 then
         log_warn "Conda path not detected yet, skipping ToS acceptance"
         return 0
     fi
-    
+
     local conda_cmd=$(get_conda_command)
-    
+
     # Only accept ToS if we're using Anaconda channels
     if echo "$CONDA_CHANNELS" |
 grep -q "defaults\|anaconda\|repo.anaconda.com"; then
         log_info "Anaconda channels detected, accepting Terms of Service..."
-        
+
         # Accept ToS for common channels
         local channels_to_accept=(
             "https://repo.anaconda.com/pkgs/main"
             "https://repo.anaconda.com/pkgs/r"
         )
-        
+
         for channel in "${channels_to_accept[@]}";
 do
             log_debug "Accepting ToS for channel: $channel"
@@ -395,7 +395,7 @@ do
     else
         log_debug "No Anaconda channels in use, skipping ToS acceptance"
     fi
-    
+
     log_success "Conda Terms of Service handling completed"
 }
 # =============================================================================
@@ -422,7 +422,7 @@ install_conda_base_packages() {
     # Build the package list based on the global profile
     local python_version="${PYTHON_VERSION:-3.10.13}"
     local core_libs="libgcc-ng libstdcxx-ng libgomp"
-    
+
     local packages_to_install=(
         "python=${python_version}"
         "mamba"
@@ -457,9 +457,9 @@ install_conda_base_packages() {
 
 install_conda_dev_packages() {
     log_info "Installing development packages..."
-    
+
     local conda_cmd=$(get_conda_command)
-    
+
     local dev_packages_to_install=()
     for package in "${CONDA_DEV_PACKAGES[@]}";
 do
@@ -468,20 +468,20 @@ then
             dev_packages_to_install+=("$package")
         fi
     done
-    
+
     if [[ ${#dev_packages_to_install[@]} -eq 0 ]];
 then
         log_success "All development packages already installed"
         return 0
     fi
-    
+
     log_info "Installing development packages: ${dev_packages_to_install[*]}"
     "$conda_cmd" install -n base -y "${dev_packages_to_install[@]}" ||
 {
         log_warn "Some development packages failed to install"
         return 1
     }
-    
+
     log_success "Development packages installed successfully"
     return 0
 }
@@ -492,77 +492,77 @@ then
 
 configure_conda_for_users() {
     log_info "Configuring conda for user access..."
-    
+
     # Configure conda initialization for development user
     configure_conda_user_init ||
 {
         log_error "Failed to configure conda user initialization"
         return 1
     }
-    
 
-    
+
+
     # Create conda configuration for user
     create_user_conda_config ||
 {
         log_warn "Failed to create user conda configuration"
     }
-    
+
     log_success "Conda user configuration completed"
     return 0
 }
 
 configure_conda_user_init() {
     log_debug "Configuring micromamba initialization for user..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would configure micromamba user initialization"
         return 0
     fi
-    
+
     local bashrc_file="$DEV_HOME/.bashrc"
-    
+
     # Check if initialization for the correct prefix has already been done
     if [[ -f "$bashrc_file" ]] && grep -q "micromamba shell init" "$bashrc_file" && grep -q "MAMBA_ROOT_PREFIX='$CONDA_PATH'" "$bashrc_file";
 then
         log_debug "Micromamba initialization for shared prefix already present in user .bashrc"
         return 0
     fi
-    
+
     # Create and set permissions for the system-wide profile directory
     # This prevents the 'Error opening for writing' message.
-mkdir -p "${CONDA_PATH}/etc/profile.d" 
+mkdir -p "${CONDA_PATH}/etc/profile.d"
     chown -R "${DEV_USERNAME}:${DEV_GROUP}" "${CONDA_PATH}/etc"
     chmod -R g+w "${CONDA_PATH}/etc"
 
     # Run micromamba's shell setup command, explicitly setting the root prefix.
-log_info "Running 'micromamba shell init' for user ${DEV_USERNAME}..." 
+log_info "Running 'micromamba shell init' for user ${DEV_USERNAME}..."
     sudo -u "$DEV_USERNAME" /usr/local/bin/micromamba shell init -s bash -r "$CONDA_PATH" ||
 {
         log_warn "Failed to run micromamba shell init for user."
 return 1
     }
-    
+
     log_debug "Micromamba initialization configured for user .bashrc"
     return 0
 }
 
 create_user_conda_config() {
     log_debug "Creating user conda configuration..."
-    
+
     local conda_config_dir="$DEV_HOME/.conda"
     local conda_config_file="$conda_config_dir/condarc"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would create user conda config"
         return 0
     fi
-    
+
     # Create conda config directory
     create_directory "$conda_config_dir" "$DEV_USERNAME:$DEV_GROUP" "755"
-    
+
     # Create .condarc file if it doesn't exist
 
 # Create .condarc file if it doesn't exist
@@ -597,14 +597,14 @@ anaconda_upload: false
 create_default_packages:
 $(for pkg in ${CONDA_BASE_PACKAGES[@]}; do echo "  - $pkg"; done)
 EOF
-        
+
         chown "$DEV_USERNAME:$DEV_GROUP" "$conda_config_file"
         chmod 644 "$conda_config_file"
-       log_debug "User conda configuration created" 
+       log_debug "User conda configuration created"
     else
         log_debug "User conda configuration already exists"
     fi
-    
+
     return 0
 }
 
@@ -614,49 +614,49 @@ EOF
 
 verify_conda_installation() {
     log_info "Verifying conda installation..."
-    
+
     # Test conda command availability
     verify_conda_command ||
 {
         log_error "Conda command verification failed"
         return 1
     }
-    
+
     # Test conda environment
     verify_conda_environment ||
 {
         log_error "Conda environment verification failed"
         return 1
     }
-    
+
     # Test user access
     verify_user_conda_access ||
 {
         log_error "User conda access verification failed"
         return 1
     }
-    
+
     # Test package installation
     verify_conda_packages ||
 {
         log_warn "Some conda packages may not be properly installed"
     }
-    
+
     log_success "Conda installation verification completed"
     return 0
 }
 
 verify_conda_command() {
     log_debug "Verifying conda command..."
-    
+
     local conda_cmd=$(get_conda_command)
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would verify conda command"
         return 0
     fi
-    
+
     # Test conda command
     if "$conda_cmd" --version >/dev/null 2>&1;
 then
@@ -666,26 +666,26 @@ then
         log_error "Conda command not working: $conda_cmd"
         return 1
     fi
-    
+
     return 0
 }
 
 verify_conda_environment() {
     log_debug "Verifying conda environment..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would verify conda environment"
         return 0
     fi
-    
+
     # Initialize micromamba shell
     eval "$(micromamba shell hook -s bash)" ||
 {
         log_error "Failed to initialize micromamba for verification"
         return 1
     }
-    
+
     # Test conda info
     if conda info >/dev/null 2>&1;
 then
@@ -694,7 +694,7 @@ then
         log_error "Conda environment initialization failed"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -709,10 +709,10 @@ check_user_exists "$DEV_USERNAME"; then
 return 0
     fi
 
-    # This is a more direct and robust test. 
+    # This is a more direct and robust test.
 # It checks if the user, with the correct root prefix, can see the packages
     # in the environment we created for them.
-This proves the setup is correct. 
+This proves the setup is correct.
     local test_cmd="export MAMBA_ROOT_PREFIX='${CONDA_PATH}'; /usr/local/bin/micromamba list -n '${env_name}'"
 
     log_debug "Running verification: ${test_cmd}"
@@ -721,7 +721,7 @@ then
         log_success "User can successfully access the '${env_name}' environment."
 else
         log_error "User cannot access the shared '${env_name}' environment."
-log_info "This might be a permissions issue on '${CONDA_PATH}'." 
+log_info "This might be a permissions issue on '${CONDA_PATH}'."
         return 1
     fi
 
@@ -740,7 +740,7 @@ verify_conda_packages() {
     if [[ -z "$installed_packages" ]];
 then
         log_warn "Could not retrieve package list from '${env_name}' for verification."
-return 0 # Exit gracefully, as the main install succeeded 
+return 0 # Exit gracefully, as the main install succeeded
     fi
 
     local missing_packages=()
@@ -752,13 +752,13 @@ then
             missing_packages+=("$package")
         fi
     done
-    
+
     if [[ ${#missing_packages[@]} -gt 0 ]];
 then
         log_warn "Missing key packages in '${env_name}': ${missing_packages[*]}"
         return 1
     fi
-    
+
     log_success "All key packages verified successfully in '${env_name}'."
 return 0
 }
@@ -770,22 +770,22 @@ return 0
 show_conda_info() {
     local env_name="${CONDA_ENV_NAME:-dev_env}"
     local env_path="${CONDA_PATH}/envs/${env_name}"
-    
+
     log_header "Conda Configuration Summary"
-    
+
     echo "Installation:"
     echo "  Type: micromamba"
     echo "  Root Path: ${DETECTED_CONDA_PATH:-Not detected}"
-    
+
     if [[ "${DRY_RUN:-false}" != "true" ]] && [[ -n "${DETECTED_CONDA_PATH:-}" ]];
 then
         echo "  Version: $(micromamba --version 2>/dev/null || echo "Unknown")"
-        
+
         echo ""
         echo "Created Environment:"
         micromamba env list |
 sed 's/^/  /' || echo "  Unable to list environments"
-        
+
         echo ""
         echo "Packages in '${env_name}' Environment (Top 10):"
         micromamba list -p "${env_path}" |
@@ -793,15 +793,15 @@ head -n 12 | sed 's/^/  /' || echo "  Unable to list packages"
         local total_packages=$(micromamba list -p "${env_path}" | wc -l)
         echo "  ... ($total_packages total packages)"
     fi
-    
+
     echo ""
     echo "User Configuration:"
     echo "  Config directory: $DEV_HOME/.conda"
     echo "  User .condarc: $([ -f "$DEV_HOME/.condarc" ] && echo "✓ Exists" || echo "✗ Missing")"
-    
-    
-log_separator 
-    
+
+
+log_separator
+
     # Show usage instructions for the created environment
     log_info "Usage Instructions:"
     echo "  • To activate your new environment, run:"
@@ -819,62 +819,62 @@ create_conda_environment() {
     local env_name="$1"
     local python_version="${2:-3.9}"
     local packages="${3:-}"
-    
+
      log_info "Creating conda environment: $env_name"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would create environment: $env_name with Python $python_version"
         return 0
     fi
-    
+
     local conda_cmd=$(get_conda_command)
     source "$DETECTED_CONDA_PATH/etc/profile.d/conda.sh"
-    
+
     # Check if environment already exists
     if "$conda_cmd" env list |
 grep -q "^$env_name "; then
         log_warn "Environment '$env_name' already exists"
         return 0
     fi
-    
+
     # Create environment
     local create_cmd="$conda_cmd create -n $env_name python=$python_version -y"
     if [[ -n "$packages" ]];
 then
         create_cmd="$create_cmd $packages"
     fi
-    
+
     log_command "$create_cmd"
     $create_cmd ||
 {
         log_error "Failed to create conda environment: $env_name"
         return 1
     }
-    
+
     log_success "Conda environment '$env_name' created successfully"
     return 0
 }
 
 cleanup_conda_cache() {
     log_info "Cleaning up conda cache and temporary files..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]];
 then
         log_info "[DRY RUN] Would clean conda cache"
         return 0
     fi
-    
+
     local conda_cmd=$(get_conda_command)
     source "$DETECTED_CONDA_PATH/etc/profile.d/conda.sh"
-    
+
     # Clean all conda caches
     "$conda_cmd" clean --all -y ||
 {
         log_warn "Failed to clean conda cache"
         return 1
     }
-    
+
     log_success "Conda cache cleaned successfully"
     return 0
 }

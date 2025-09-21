@@ -1,0 +1,194 @@
+name: SSH Permissions Fix Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'ml-dev-bootstrap/utils/fix-ssh-permissions.sh'
+      - 'ml-dev-bootstrap/tests/ssh-permissions/**'
+      - '.github/workflows/ssh-permissions-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'ml-dev-bootstrap/utils/fix-ssh-permissions.sh'
+      - 'ml-dev-bootstrap/tests/ssh-permissions/**'
+      - '.github/workflows/ssh-permissions-tests.yml'
+
+jobs:
+  test-ssh-permissions:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        shell: [bash, dash]  # Test with different shells
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up shell
+      run: |
+        if [[ "${{ matrix.shell }}" == "dash" ]]; then
+          echo "Using dash shell"
+          sudo dpkg-reconfigure dash
+        fi
+
+    - name: Make scripts executable
+      run: |
+        cd ml-dev-bootstrap
+        chmod +x utils/fix-ssh-permissions.sh
+        chmod +x tests/ssh-permissions/*.sh
+
+    - name: Run unit tests
+      run: |
+        cd ml-dev-bootstrap
+        ./tests/ssh-permissions/test-framework.sh tests/ssh-permissions/unit-tests.sh
+
+    - name: Run integration tests
+      run: |
+        cd ml-dev-bootstrap
+        ./tests/ssh-permissions/test-framework.sh tests/ssh-permissions/integration-tests.sh
+
+    - name: Test script help output
+      run: |
+        cd ml-dev-bootstrap
+        ./utils/fix-ssh-permissions.sh --help | grep -q "SSH Permissions Fix Utility"
+
+    - name: Test script dry run
+      run: |
+        cd ml-dev-bootstrap
+        ./utils/fix-ssh-permissions.sh --dry-run
+
+    - name: Test script with custom directory
+      run: |
+        cd ml-dev-bootstrap
+        mkdir -p /tmp/test-ssh
+        ./utils/fix-ssh-permissions.sh /tmp/test-ssh
+
+  test-ssh-permissions-wsl-simulation:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:6.0  # Simulates container environment
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Make scripts executable
+      run: |
+        cd ml-dev-bootstrap
+        chmod +x utils/fix-ssh-permissions.sh
+        chmod +x tests/ssh-permissions/*.sh
+
+    - name: Simulate WSL environment
+      run: |
+        # Create mock WSL environment variables
+        export WSL_DISTRO_NAME="Ubuntu"
+        export WSLENV="USERPROFILE/u"
+
+        cd ml-dev-bootstrap
+        ./tests/ssh-permissions/test-framework.sh tests/ssh-permissions/unit-tests.sh
+
+    - name: Test in container environment
+      run: |
+        cd ml-dev-bootstrap
+        mkdir -p /tmp/container-ssh
+        ./utils/fix-ssh-permissions.sh /tmp/container-ssh
+
+  test-ssh-permissions-edge-cases:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Make scripts executable
+      run: |
+        cd ml-dev-bootstrap
+        chmod +x utils/fix-ssh-permissions.sh
+
+    - name: Test with read-only filesystem simulation
+      run: |
+        cd ml-dev-bootstrap
+        # Create a directory and make it read-only to simulate permission issues
+        mkdir -p /tmp/readonly-ssh
+        chmod 555 /tmp/readonly-ssh
+        # This should handle the error gracefully
+        ./utils/fix-ssh-permissions.sh /tmp/readonly-ssh || echo "Expected error for read-only directory"
+
+    - name: Test with non-existent parent directory
+      run: |
+        cd ml-dev-bootstrap
+        # This should create the parent directories
+        ./utils/fix-ssh-permissions.sh /tmp/deep/nested/ssh/dir
+
+    - name: Test with symlinked directory
+      run: |
+        cd ml-dev-bootstrap
+        mkdir -p /tmp/real-ssh
+        ln -s /tmp/real-ssh /tmp/symlink-ssh
+        ./utils/fix-ssh-permissions.sh /tmp/symlink-ssh
+
+  lint-and-syntax-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check shell script syntax
+      run: |
+        cd ml-dev-bootstrap
+        bash -n utils/fix-ssh-permissions.sh
+        bash -n tests/ssh-permissions/*.sh
+
+    - name: Check for common shell script issues
+      run: |
+        cd ml-dev-bootstrap
+        # Check for common issues
+        if grep -n "rm -rf /" utils/fix-ssh-permissions.sh; then
+          echo "ERROR: Dangerous rm command found"
+          exit 1
+        fi
+
+        # Check for proper error handling
+        if ! grep -q "set -euo pipefail" utils/fix-ssh-permissions.sh; then
+          echo "WARNING: Script doesn't use strict error handling"
+        fi
+
+    - name: Validate test framework
+      run: |
+        cd ml-dev-bootstrap
+        # Test that the framework loads without errors
+        bash -c "source tests/ssh-permissions/test-framework.sh && echo 'Framework loaded successfully'"
+
+  security-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check for security issues
+      run: |
+        cd ml-dev-bootstrap
+
+        # Check for dangerous commands
+        dangerous_commands=("rm -rf /" "chmod 777" "chown root" "sudo" "eval.*\$\(")
+        for cmd in "${dangerous_commands[@]}"; do
+          if grep -r "$cmd" utils/fix-ssh-permissions.sh tests/ssh-permissions/; then
+            echo "WARNING: Potentially dangerous command found: $cmd"
+          fi
+        done
+
+        # Check that script doesn't run as root inappropriately
+        if grep -q "EUID.*eq.*0" utils/fix-ssh-permissions.sh; then
+          echo "Script properly checks for root user - GOOD"
+        else
+          echo "WARNING: Script doesn't check for root user"
+        fi
+
+        # Check file permission safety
+        if grep -q "chmod.*777" utils/fix-ssh-permissions.sh; then
+          echo "ERROR: Script sets dangerous 777 permissions"
+          exit 1
+        fi

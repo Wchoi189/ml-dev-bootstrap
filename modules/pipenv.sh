@@ -15,7 +15,7 @@ install_pipenv() {
         return 2
     fi
 
-    local dev_group="${USER_GROUP:-dev}"
+    local dev_group="${USER_GROUP:-vscode}"
     local dev_user="${USERNAME-}"
     local target_user target_home
     if [[ -n "$dev_user" ]] && id "$dev_user" &>/dev/null; then
@@ -42,7 +42,7 @@ install_pipenv() {
 
     log_info "Installing Pipenv for $target_user..."
     log_debug "Running: python3 -m pip install --user --upgrade pipenv"
-    
+
     if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
         if ! sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'python3 -m pip install --user --upgrade pipenv'; then
             log_error "Pipenv installation failed"
@@ -72,7 +72,7 @@ install_pipenv() {
         find "$target_home/.local" -type d -exec chmod g+s {} + 2>/dev/null || true
         log_debug "Group permissions set for $target_home/.local"
     fi
-    
+
     if [[ $EUID -eq 0 && -x "$target_home/.local/bin/pipenv" ]]; then
         log_debug "Creating system symlink: /usr/local/bin/pipenv -> $target_home/.local/bin/pipenv"
         ln -sf "$target_home/.local/bin/pipenv" /usr/local/bin/pipenv
@@ -83,7 +83,7 @@ install_pipenv() {
         log_error "Pipenv verification failed"
         return 1
     fi
-    
+
     log_success "Pipenv installed for $target_user"
     if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
         sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'pipenv --version'

@@ -39,7 +39,7 @@ declare -A COLORS=(
 
 run_prompt() {
     log_header "Color Shell Prompt Setup"
-    
+
     # --- THIS IS THE FIX ---
     # Source common configuration to ensure variables are loaded
     # Resolve repo root robustly for config sourcing
@@ -60,7 +60,7 @@ run_prompt() {
         log_info "Configuring prompt for root user"
     else
         # Running as regular user - configure for dev-user
-        target_user="${DEV_USERNAME:-${USERNAME:-dev-user}}"
+        target_user="${DEV_USERNAME:-${USERNAME:-vscode-user}}"
         target_home="/home/$target_user"
         log_info "Configuring prompt for user: $target_user"
     fi
@@ -68,11 +68,11 @@ run_prompt() {
     # Update DEV_* variables for compatibility with existing functions
     DEV_USERNAME="$target_user"
     DEV_HOME="$target_home"
-    DEV_GROUP="${DEV_GROUP:-${USER_GROUP:-dev}}"
-    
+    DEV_GROUP="${DEV_GROUP:-${USER_GROUP:-vscode}}"
+
     local total_steps=5
     local current_step=0
-    
+
     # Step 1: Validate prompt configuration
     ((current_step++))
     log_step $current_step $total_steps "Validating prompt configuration"
@@ -80,14 +80,14 @@ run_prompt() {
         log_error "Prompt configuration validation failed"
         return 1
     }
-    
+
     # Step 2: Install prompt dependencies
     ((current_step++))
     log_step $current_step $total_steps "Installing prompt dependencies"
     install_prompt_dependencies || {
         log_warn "Some prompt dependencies failed to install"
     }
-    
+
     # Step 3: Create prompt functions
     ((current_step++))
     log_step $current_step $total_steps "Creating prompt functions"
@@ -95,7 +95,7 @@ run_prompt() {
         log_error "Failed to create prompt functions"
         return 1
     }
-    
+
     # Step 4: Configure user prompt
     ((current_step++))
     log_step $current_step $total_steps "Configuring user prompt"
@@ -103,14 +103,14 @@ run_prompt() {
         log_error "Failed to configure user prompt"
         return 1
     }
-    
+
     # Step 5: Test prompt functionality
     ((current_step++))
     log_step $current_step $total_steps "Testing prompt functionality"
     test_prompt_functionality || {
         log_warn "Prompt functionality test had issues"
     }
-    
+
     log_success "Color prompt setup completed successfully!"
     show_prompt_info
 }
@@ -121,23 +121,23 @@ run_prompt() {
 
 validate_prompt_config() {
     log_info "Validating prompt configuration..."
-    
+
     # Validate prompt style
     local valid_styles=("simple" "modern" "powerline" "minimal")
     local style_valid=false
-    
+
     for style in "${valid_styles[@]}"; do
         if [[ "$PROMPT_STYLE" == "$style" ]]; then
             style_valid=true
             break
         fi
     done
-    
+
     if [[ "$style_valid" != "true" ]]; then
         log_warn "Invalid prompt style '$PROMPT_STYLE', using 'modern'"
         export PROMPT_STYLE="modern"
     fi
-    
+
     # Check terminal color support
     if [[ -z "${TERM:-}" ]]; then
         log_warn "TERM environment variable not set, colors may not work"
@@ -145,7 +145,7 @@ validate_prompt_config() {
         log_warn "Terminal does not support colors, using simple prompt"
         export PROMPT_STYLE="simple"
     fi
-    
+
     log_success "Prompt configuration validated"
     return 0
 }
@@ -156,14 +156,14 @@ validate_prompt_config() {
 
 install_prompt_dependencies() {
     log_info "Installing prompt dependencies..."
-    
+
     local dependencies=()
-    
+
     # Git for git prompt info
     if [[ "$SHOW_GIT_INFO" == "true" ]] && ! check_command "git"; then
         dependencies+=("git")
     fi
-    
+
     # Install dependencies if needed
     if [[ ${#dependencies[@]} -gt 0 ]]; then
         install_packages "${dependencies[@]}" || {
@@ -173,7 +173,7 @@ install_prompt_dependencies() {
     else
         log_success "All prompt dependencies already available"
     fi
-    
+
     return 0
 }
 
@@ -183,14 +183,14 @@ install_prompt_dependencies() {
 
 create_prompt_functions() {
     log_info "Creating prompt functions..."
-    
+
     local prompt_functions_file="$DEV_HOME/.bash_prompt_functions"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create prompt functions file"
         return 0
     fi
-    
+
     # Create prompt functions file
     cat > "$prompt_functions_file" << 'EOF'
 #!/bin/bash
@@ -222,15 +222,15 @@ __git_ps1_show_upstream() {
     local upstream=""
     local verbose=""
     local name=""
-    
+
     # Check if we're in a git repository
     if ! git rev-parse --git-dir >/dev/null 2>&1; then
         return
     fi
-    
+
     # Get current branch
     local branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-    
+
     if [[ -n "$branch" ]]; then
         echo "$branch"
     fi
@@ -244,17 +244,17 @@ __git_ps1() {
         if ! git diff --quiet 2>/dev/null; then
             status="*"
         fi
-        
+
         # Check for untracked files
         if [[ -n $(git ls-files --others --exclude-standard 2>/dev/null) ]]; then
             status="${status}+"
         fi
-        
+
         # Check for staged changes
         if ! git diff --cached --quiet 2>/dev/null; then
             status="${status}^"
         fi
-        
+
         echo " (${branch}${status})"
     fi
 }
@@ -312,7 +312,7 @@ __time_ps1() {
 __short_pwd() {
     local pwd_length=30
     local pwd="${PWD/#$HOME/~}"
-    
+
     if [[ ${#pwd} -gt $pwd_length ]]; then
         echo "...${pwd: -$((pwd_length-3))}"
     else
@@ -332,27 +332,27 @@ __prompt_modern() {
     local conda_info=""
     local python_info=""
     local node_info=""
-    
+
     # Add git info if enabled
     if [[ "${SHOW_GIT_INFO:-true}" == "true" ]]; then
         git_info=$(__git_ps1)
     fi
-    
+
     # Add conda info if enabled
     if [[ "${SHOW_CONDA_ENV:-true}" == "true" ]]; then
         conda_info=$(__conda_ps1)
     fi
-    
+
     # Add python info if enabled
     if [[ "${SHOW_PYTHON_VERSION:-false}" == "true" ]]; then
         python_info=$(__python_ps1)
     fi
-    
+
     # Add node info if enabled
     if [[ "${SHOW_NODE_VERSION:-false}" == "true" ]]; then
         node_info=$(__node_ps1)
     fi
-    
+
     # Build prompt
     PS1=""
     PS1+="\[${PROMPT_COLORS[BRIGHT_GREEN]}\]\u"                    # username
@@ -373,22 +373,22 @@ __prompt_modern() {
 __prompt_powerline() {
     local git_info=$(__git_ps1)
     local conda_info=$(__conda_ps1)
-    
+
     PS1=""
     PS1+="\[${PROMPT_COLORS[WHITE]}\]\[${PROMPT_COLORS[BLUE]}\] \u@\h "
     PS1+="\[${PROMPT_COLORS[BLUE]}\]\[${PROMPT_COLORS[YELLOW]}\]"
     PS1+="\[${PROMPT_COLORS[BLACK]}\] \$(__short_pwd) "
-    
+
     if [[ -n "$git_info" ]]; then
         PS1+="\[${PROMPT_COLORS[YELLOW]}\]\[${PROMPT_COLORS[GREEN]}\]"
         PS1+="\[${PROMPT_COLORS[BLACK]}\]${git_info} "
     fi
-    
+
     if [[ -n "$conda_info" ]]; then
         PS1+="\[${PROMPT_COLORS[GREEN]}\]\[${PROMPT_COLORS[CYAN]}\]"
         PS1+="\[${PROMPT_COLORS[BLACK]}\]${conda_info} "
     fi
-    
+
     PS1+="\[${PROMPT_COLORS[CYAN]}\]\[${PROMPT_COLORS[RESET]}\] "
     PS1+="\n\$ "
 }
@@ -399,7 +399,7 @@ __prompt_minimal() {
     if [[ "${SHOW_GIT_INFO:-true}" == "true" ]]; then
         git_info=$(__git_ps1)
     fi
-    
+
     PS1="\[${PROMPT_COLORS[BRIGHT_BLUE]}\]\w"
     PS1+="\[${PROMPT_COLORS[BRIGHT_PURPLE]}\]${git_info}"
     PS1+="\[${PROMPT_COLORS[RESET]}\] \$ "
@@ -427,7 +427,7 @@ __set_prompt() {
 __init_prompt() {
     # Set up PROMPT_COMMAND to update prompt
     PROMPT_COMMAND="__set_prompt"
-    
+
     # Set initial prompt
     __set_prompt
 }
@@ -438,11 +438,11 @@ export -f __exit_status_ps1 __load_ps1 __time_ps1 __short_pwd
 export -f __prompt_simple __prompt_modern __prompt_powerline __prompt_minimal
 export -f __set_prompt __init_prompt
 EOF
-    
+
     # Set ownership and permissions
     chown "$DEV_USERNAME:$DEV_GROUP" "$prompt_functions_file"
     chmod 644 "$prompt_functions_file"
-    
+
     log_success "Prompt functions created successfully"
     return 0
 }
@@ -453,43 +453,43 @@ EOF
 
 configure_user_prompt() {
     log_info "Configuring user prompt..."
-    
+
     # Add prompt configuration to user's .bashrc
     configure_bashrc_prompt || {
         log_error "Failed to configure .bashrc prompt"
         return 1
     }
-    
+
     # Create prompt configuration file
     create_prompt_config || {
         log_warn "Failed to create prompt configuration file"
     }
-    
+
     log_success "User prompt configured successfully"
     return 0
 }
 
 configure_bashrc_prompt() {
     local bashrc_file="$DEV_HOME/.bashrc"
-    
+
     log_debug "Configuring prompt in .bashrc"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would configure prompt in .bashrc"
         return 0
     fi
-    
+
     if [[ ! -f "$bashrc_file" ]]; then
         log_error ".bashrc file not found: $bashrc_file"
         return 1
     fi
-    
+
     # Check if prompt configuration already exists
     if grep -q "bash_prompt_functions" "$bashrc_file"; then
         log_debug "Prompt configuration already exists in .bashrc"
         return 0
     fi
-    
+
     # Add prompt configuration
     cat >> "$bashrc_file" << EOF
 
@@ -497,37 +497,37 @@ configure_bashrc_prompt() {
 # Load prompt functions
 if [ -f ~/.bash_prompt_functions ]; then
     source ~/.bash_prompt_functions
-    
+
     # Set prompt style
     export PROMPT_STYLE="${PROMPT_STYLE}"
     export SHOW_GIT_INFO="${SHOW_GIT_INFO}"
     export SHOW_CONDA_ENV="${SHOW_CONDA_ENV}"
     export SHOW_PYTHON_VERSION="${SHOW_PYTHON_VERSION}"
     export SHOW_NODE_VERSION="${SHOW_NODE_VERSION}"
-    
+
     # Initialize prompt
     __init_prompt
 fi
 # === End Color Prompt Configuration ===
 EOF
-    
+
     # Set ownership
     chown "$DEV_USERNAME:$DEV_GROUP" "$bashrc_file"
-    
+
     log_debug "Prompt configuration added to .bashrc"
     return 0
 }
 
 create_prompt_config() {
     local config_file="$DEV_HOME/.bash_prompt_config"
-    
+
     log_debug "Creating prompt configuration file"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create prompt configuration file"
         return 0
     fi
-    
+
     cat > "$config_file" << EOF
 # Bash Prompt Configuration
 # This file allows you to customize your shell prompt
@@ -555,10 +555,10 @@ SHOW_NODE_VERSION="${SHOW_NODE_VERSION}"
 
 # To apply changes, run: source ~/.bashrc
 EOF
-    
+
     chown "$DEV_USERNAME:$DEV_GROUP" "$config_file"
     chmod 644 "$config_file"
-    
+
     log_debug "Prompt configuration file created"
     return 0
 }
@@ -569,30 +569,30 @@ EOF
 
 test_prompt_functionality() {
     log_info "Testing prompt functionality..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would test prompt functionality"
         return 0
     fi
-    
+
     # Test if user can source the prompt functions
     if ! check_user_exists "$DEV_USERNAME"; then
         log_debug "Development user does not exist, skipping prompt test"
         return 0
     fi
-    
+
     # Test prompt functions loading
     local test_result=$(sudo -u "$DEV_USERNAME" -i bash -c "
         source ~/.bash_prompt_functions 2>/dev/null && echo 'SUCCESS' || echo 'FAILED'
     " 2>/dev/null)
-    
+
     if [[ "$test_result" == "SUCCESS" ]]; then
         log_success "Prompt functions load successfully"
     else
         log_error "Prompt functions failed to load"
         return 1
     fi
-    
+
     # Test git prompt function (if git is available)
     if check_command "git"; then
         local git_test=$(sudo -u "$DEV_USERNAME" -i bash -c "
@@ -601,14 +601,14 @@ test_prompt_functionality() {
             cd test_repo && __git_ps1 2>/dev/null && echo 'GIT_OK'
             cd .. && rm -rf test_repo
         " 2>/dev/null)
-        
+
         if [[ "$git_test" == *"GIT_OK"* ]]; then
             log_success "Git prompt function working"
         else
             log_warn "Git prompt function may have issues"
         fi
     fi
-    
+
     # Test conda prompt function (if conda is available)
     if [[ -n "${DETECTED_CONDA_PATH:-}" ]]; then
         local conda_test=$(sudo -u "$DEV_USERNAME" -i bash -c "
@@ -616,14 +616,14 @@ test_prompt_functionality() {
             export CONDA_DEFAULT_ENV='test_env'
             __conda_ps1 2>/dev/null && echo 'CONDA_OK'
         " 2>/dev/null)
-        
+
         if [[ "$conda_test" == *"CONDA_OK"* ]]; then
             log_success "Conda prompt function working"
         else
             log_warn "Conda prompt function may have issues"
         fi
     fi
-    
+
     log_success "Prompt functionality test completed"
     return 0
 }
@@ -634,7 +634,7 @@ test_prompt_functionality() {
 
 show_prompt_info() {
     log_header "Color Prompt Configuration Summary"
-    
+
     echo "Prompt Configuration:"
     echo "  Style: $PROMPT_STYLE"
     echo "  Git info: $SHOW_GIT_INFO"
@@ -642,7 +642,7 @@ show_prompt_info() {
     echo "  Python version: $SHOW_PYTHON_VERSION"
     echo "  Node.js version: $SHOW_NODE_VERSION"
     echo ""
-    
+
     echo "Configuration Files:"
     local config_files=(".bash_prompt_functions" ".bash_prompt_config")
     for file in "${config_files[@]}"; do
@@ -653,7 +653,7 @@ show_prompt_info() {
             echo "  ✗ $file (missing)"
         fi
     done
-    
+
     echo ""
     echo "Bashrc Integration:"
     if [[ -f "$DEV_HOME/.bashrc" ]] && grep -q "bash_prompt_functions" "$DEV_HOME/.bashrc"; then
@@ -661,7 +661,7 @@ show_prompt_info() {
     else
         echo "  ✗ Prompt configuration not found in .bashrc"
     fi
-    
+
     if [[ "${DRY_RUN:-false}" != "true" ]]; then
         echo ""
         echo "Available Prompt Styles:"
@@ -669,7 +669,7 @@ show_prompt_info() {
         echo "  • modern    - Colorful multi-line prompt with git/conda info"
         echo "  • powerline - Powerline-style prompt with segments"
         echo "  • minimal   - Clean minimal prompt with git info"
-        
+
         echo ""
         echo "Prompt Features:"
         echo "  • Git branch and status indicators"
@@ -681,9 +681,9 @@ show_prompt_info() {
         echo ""
         echo "[DRY RUN] Detailed prompt information would be displayed here"
     fi
-    
+
     log_separator
-    
+
     # Show usage instructions
     log_info "Usage Instructions:"
     echo "  • Prompt will be active in new shell sessions"
@@ -699,41 +699,41 @@ show_prompt_info() {
 
 change_prompt_style() {
     local new_style="$1"
-    
+
     log_info "Changing prompt style to: $new_style"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would change prompt style to: $new_style"
         return 0
     fi
-    
+
     # Validate style
     local valid_styles=("simple" "modern" "powerline" "minimal")
     local style_valid=false
-    
+
     for style in "${valid_styles[@]}"; do
         if [[ "$new_style" == "$style" ]]; then
             style_valid=true
             break
         fi
     done
-    
+
     if [[ "$style_valid" != "true" ]]; then
         log_error "Invalid prompt style: $new_style"
         log_info "Valid styles: ${valid_styles[*]}"
         return 1
     fi
-    
+
     # Update configuration file
     local config_file="$DEV_HOME/.bash_prompt_config"
     if [[ -f "$config_file" ]]; then
         sed -i "s/^PROMPT_STYLE=.*/PROMPT_STYLE=\"$new_style\"/" "$config_file"
         log_success "Prompt style updated in configuration file"
     fi
-    
+
     # Update environment variable
     export PROMPT_STYLE="$new_style"
-    
+
     log_success "Prompt style changed to: $new_style"
     log_info "Reload shell to see changes: source ~/.bashrc"
     return 0
@@ -741,61 +741,61 @@ change_prompt_style() {
 
 demo_prompt_styles() {
     log_header "Prompt Style Demonstration"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would demonstrate prompt styles"
         return 0
     fi
-    
+
     echo "Here are examples of different prompt styles:"
     echo ""
-    
+
     echo "1. Simple style:"
     echo "   dev-user@container:/home/dev-user$ "
     echo ""
-    
+
     echo "2. Modern style:"
     echo "   dev-user@container:/home/dev-user (main*) (myenv)"
     echo "   $ "
     echo ""
-    
+
     echo "3. Powerline style:"
     echo "   dev-user@container  ~/project  main*  myenv "
     echo "   $ "
     echo ""
-    
+
     echo "4. Minimal style:"
     echo "   ~/project (main*) $ "
     echo ""
-    
+
     echo "Legend:"
     echo "  • (main*) - Git branch with uncommitted changes"
     echo "  • (myenv) - Active conda environment"
     echo "  • Colors vary by terminal support"
-    
+
     log_separator
 }
 
 reset_prompt_config() {
     log_info "Resetting prompt configuration to defaults..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would reset prompt configuration"
         return 0
     fi
-    
+
     if ! confirm_action "This will reset all prompt customizations. Continue?" "n"; then
         log_info "Prompt reset cancelled"
         return 0
     fi
-    
+
     # Remove prompt configuration from .bashrc
     local bashrc_file="$DEV_HOME/.bashrc"
     if [[ -f "$bashrc_file" ]]; then
         sed -i '/=== Color Prompt Configuration/,/=== End Color Prompt Configuration ===/d' "$bashrc_file"
         log_info "Removed prompt configuration from .bashrc"
     fi
-    
+
     # Remove prompt files
     local prompt_files=(".bash_prompt_functions" ".bash_prompt_config")
     for file in "${prompt_files[@]}"; do
@@ -805,7 +805,7 @@ reset_prompt_config() {
             log_info "Removed: $file"
         fi
     done
-    
+
     log_success "Prompt configuration reset to system defaults"
     log_info "Start a new shell session to see changes"
     return 0

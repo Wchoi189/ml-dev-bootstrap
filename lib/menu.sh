@@ -88,7 +88,7 @@ list_modules() {
 # =============================================================================
 
 switch_to_dev_user() {
-    local dev_user="${1:-${USERNAME:-dev-user}}"
+    local dev_user="${1:-${USERNAME:-vscode}}"
 
     # Check if user exists
     if ! id "$dev_user" >/dev/null 2>&1; then
@@ -123,7 +123,7 @@ show_user_management_menu() {
         echo "        $(menu_header "👤 USER MANAGEMENT")"
         menu_separator
         echo
-        
+
         # Check for existing users (filter out system users)
         local existing_users=()
         while IFS=: read -r username _ uid _; do
@@ -132,7 +132,7 @@ show_user_management_menu() {
                 existing_users+=("$username")
             fi
         done < /etc/passwd
-        
+
         if [[ ${#existing_users[@]} -gt 0 ]]; then
             echo "        $(color_cyan "Existing users:")"
             local i=1
@@ -152,14 +152,14 @@ show_user_management_menu() {
             echo "        $(menu_option "c)" " Create new user")"
             echo "        $(menu_option "b)" " Back to main menu")"
         fi
-        
+
         echo
         menu_separator
         echo
         echo -n "        $(color_purple "Select option:") "
         read -p "" user_choice
         echo
-        
+
         case $user_choice in
             c|C)
                 create_new_user_workflow
@@ -198,16 +198,16 @@ show_user_management_menu() {
 create_new_user_workflow() {
     echo "        $(color_blue "Create New User")"
     echo
-    
+
     # Ask for username
-    local default_username="${USERNAME:-dev-user}"
+    local default_username="${USERNAME:-vscode}"
     echo -n "        $(color_cyan "Enter username") $(color_white "[$default_username]"): "
     read -p "" new_username
-    
+
     if [[ -z "$new_username" ]]; then
         new_username="$default_username"
     fi
-    
+
     # Validate username
     if [[ ! "$new_username" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]; then
         echo "        $(color_red "Invalid username. Use only letters, numbers, underscore, and hyphen.")"
@@ -216,7 +216,7 @@ create_new_user_workflow() {
         read -p ""
         return 1
     fi
-    
+
     # Check if user already exists
     if id "$new_username" >/dev/null 2>&1; then
         echo "        $(color_red "User '$new_username' already exists.")"
@@ -225,27 +225,27 @@ create_new_user_workflow() {
         read -p ""
         return 1
     fi
-    
+
     # Ask about password
     echo -n "        $(color_cyan "Create password for user? (y/n) [n]: ")"
     read -p "" create_password
-    
+
     if [[ "$create_password" =~ ^[Yy]$ ]]; then
         echo "        $(color_yellow "Note: You will be prompted to set the password after user creation.")"
     fi
-    
+
     echo
     echo "        $(color_blue "Creating user '$new_username'...")"
     echo
-    
+
     # Temporarily override USERNAME for this session
     export USERNAME="$new_username"
-    
+
     # Create the user
     if execute_module "user"; then
         echo
         echo "        $(color_green "User '$new_username' created successfully!")"
-        
+
         # Handle password creation if requested
         if [[ "$create_password" =~ ^[Yy]$ ]]; then
             echo
@@ -256,7 +256,7 @@ create_new_user_workflow() {
                 echo "        $(color_yellow "[DRY RUN] Would prompt for password")"
             fi
         fi
-        
+
         echo
         echo "        $(color_blue "Switching to user '$new_username'...")"
         echo
@@ -274,7 +274,7 @@ create_new_user_workflow() {
 
 switch_to_existing_user() {
     local existing_users=("$@")
-    
+
     echo "        $(color_blue "Switch to Existing User")"
     echo
     echo "        $(color_cyan "Available users:")"
@@ -286,9 +286,9 @@ switch_to_existing_user() {
     echo
     echo -n "        $(color_purple "Select user (1-${#existing_users[@]}) or enter username: ")"
     read -p "" user_selection
-    
+
     local selected_user=""
-    
+
     # Check if it's a number
     if [[ "$user_selection" =~ ^[0-9]+$ ]] && [[ $user_selection -le ${#existing_users[@]} ]]; then
         selected_user="${existing_users[$((user_selection - 1))]}"
@@ -301,7 +301,7 @@ switch_to_existing_user() {
             fi
         done
     fi
-    
+
     if [[ -n "$selected_user" ]]; then
         echo "        $(color_blue "Switching to user '$selected_user'...")"
         echo
@@ -340,6 +340,7 @@ show_menu() {
         echo "        $(menu_option "s)" " Configure APT sources")"
         echo "        $(menu_option "r)" " User management (create/switch)")"
         echo "        $(menu_option "e)" " Run environment manager(s) (multi-select)")"
+        echo "        $(menu_option "p)" " Fix SSH permissions")"
         echo "        $(menu_option "c)" " Show configuration")"
         echo "        $(menu_option "q)" " Quit")"
         echo
@@ -426,6 +427,19 @@ show_menu() {
                 echo "        $(color_blue "Executing environment manager setup...")"
                 echo
                 execute_module "envmgr"
+                echo
+                echo -n "        $(color_purple "Press Enter to continue...")"
+                read -p ""
+                ;;
+            p|P)
+                echo "        $(color_blue "Fixing SSH permissions...")"
+                echo
+                local utils_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && cd "utils" && pwd)"
+                if [[ -x "$utils_dir/fix-ssh-permissions.sh" ]]; then
+                    "$utils_dir/fix-ssh-permissions.sh"
+                else
+                    echo "        $(color_red "SSH permissions fix script not found at:") $(color_yellow "$utils_dir/fix-ssh-permissions.sh")"
+                fi
                 echo
                 echo -n "        $(color_purple "Press Enter to continue...")"
                 read -p ""

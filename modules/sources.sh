@@ -3,10 +3,11 @@
 # =============================================================================
 # APT Sources Management Module
 # Configure regional APT mirrors and sources for faster package downloads
+# Supports Ubuntu and Debian-based distributions
 # =============================================================================
 
-# Available mirrors configuration
-declare -A MIRRORS=(
+# Available mirrors configuration for Ubuntu
+declare -A UBUNTU_MIRRORS=(
     ["kakao"]="http://mirror.kakao.com/ubuntu/"
     ["naver"]="http://mirror.navercorp.com/ubuntu/"
     ["daum"]="http://ftp.daum.net/ubuntu/"
@@ -15,6 +16,18 @@ declare -A MIRRORS=(
     ["us-east"]="http://us-east-1.ec2.archive.ubuntu.com/ubuntu/"
     ["eu-central"]="http://eu-central-1.ec2.archive.ubuntu.com/ubuntu/"
     ["asia-east"]="http://asia-east-1.ec2.archive.ubuntu.com/ubuntu/"
+)
+
+# Available mirrors configuration for Debian
+declare -A DEBIAN_MIRRORS=(
+    ["kakao"]="http://mirror.kakao.com/debian/"
+    ["naver"]="http://mirror.navercorp.com/debian/"
+    ["daum"]="http://ftp.daum.net/debian/"
+    ["debian-official"]="http://deb.debian.org/debian/"
+    ["us-west"]="http://us-west-2.ec2.debian.org/debian/"
+    ["us-east"]="http://us-east-1.ec2.debian.org/debian/"
+    ["eu-central"]="http://eu-central-1.ec2.debian.org/debian/"
+    ["asia-east"]="http://asia-east-1.ec2.debian.org/debian/"
 )
 
 # Ubuntu codenames mapping
@@ -29,25 +42,70 @@ declare -A UBUNTU_CODENAMES=(
     ["24.04"]="noble"
 )
 
+# Debian codenames mapping
+declare -A DEBIAN_CODENAMES=(
+    ["10"]="buster"
+    ["11"]="bullseye"
+    ["12"]="bookworm"
+    ["13"]="trixie"
+    ["unstable"]="sid"
+)
+
 # =============================================================================
 # Functions
 # =============================================================================
 
-detect_ubuntu_version() {
+# =============================================================================
+# Functions
+# =============================================================================
+
+detect_distribution() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
-        if [[ "$ID" == "ubuntu" ]]; then
-            UBUNTU_VERSION="$VERSION_ID"
-            CODENAME="${UBUNTU_CODENAMES[$UBUNTU_VERSION]}"
-            if [[ -z "$CODENAME" ]]; then
-                log_error "Unsupported Ubuntu version: $UBUNTU_VERSION"
-                return 1
-            fi
-            log_info "Detected Ubuntu $UBUNTU_VERSION ($CODENAME)"
-            return 0
-        fi
+        case "$ID" in
+            ubuntu)
+                DISTRO="ubuntu"
+                VERSION="$VERSION_ID"
+                CODENAME="${UBUNTU_CODENAMES[$VERSION]}"
+                MIRRORS=("${UBUNTU_MIRRORS[@]}")
+                if [[ -z "$CODENAME" ]]; then
+                    log_error "Unsupported Ubuntu version: $VERSION"
+                    return 1
+                fi
+                log_info "Detected Ubuntu $VERSION ($CODENAME)"
+                return 0
+                ;;
+            debian)
+                DISTRO="debian"
+                VERSION="$VERSION_ID"
+                CODENAME="${DEBIAN_CODENAMES[$VERSION]}"
+                MIRRORS=("${DEBIAN_MIRRORS[@]}")
+                if [[ -z "$CODENAME" ]]; then
+                    log_error "Unsupported Debian version: $VERSION"
+                    return 1
+                fi
+                log_info "Detected Debian $VERSION ($CODENAME)"
+                return 0
+                ;;
+            *)
+                # Check if it's a Debian derivative (like Ubuntu-based distros)
+                if [[ "$ID_LIKE" == *"debian"* ]] || [[ "$ID_LIKE" == *"ubuntu"* ]]; then
+                    log_info "Detected Debian-based distribution: $PRETTY_NAME"
+                    # Try to use Ubuntu mirrors as fallback for Ubuntu derivatives
+                    DISTRO="ubuntu"
+                    VERSION="$VERSION_ID"
+                    CODENAME="${UBUNTU_CODENAMES[$VERSION]}"
+                    MIRRORS=("${UBUNTU_MIRRORS[@]}")
+                    if [[ -z "$CODENAME" ]]; then
+                        CODENAME="jammy"  # Default to a recent LTS
+                    fi
+                    log_warn "Using Ubuntu mirrors for $PRETTY_NAME (may not be optimal)"
+                    return 0
+                fi
+                ;;
+        esac
     fi
-    log_error "Unable to detect Ubuntu version"
+    log_error "Unable to detect supported distribution (Ubuntu/Debian required)"
     return 1
 }
 
@@ -66,22 +124,44 @@ generate_sources_list() {
     local codename="$2"
     local include_sources="${3:-false}"
 
-    cat << EOF
-# $mirror Ubuntu $UBUNTU_VERSION LTS ($codename) Repository
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        # Ubuntu sources format
+        cat << EOF
+# $mirror Ubuntu $VERSION LTS ($codename) Repository
 deb $mirror $codename main restricted universe multiverse
 deb $mirror $codename-updates main restricted universe multiverse
 deb $mirror $codename-backports main restricted universe multiverse
 deb $mirror $codename-security main restricted universe multiverse
 EOF
+    elif [[ "$DISTRO" == "debian" ]]; then
+        # Debian sources format
+        cat << EOF
+# $mirror Debian $VERSION ($codename) Repository
+deb $mirror $codename main contrib non-free
+deb $mirror $codename-updates main contrib non-free
+deb $mirror $codename-backports main contrib non-free
+deb $mirror-security $codename-security main contrib non-free
+EOF
+    fi
 
     if [[ "$include_sources" == "true" ]]; then
-        cat << EOF
+        if [[ "$DISTRO" == "ubuntu" ]]; then
+            cat << EOF
 # Source packages
 deb-src $mirror $codename main restricted universe multiverse
 deb-src $mirror $codename-updates main restricted universe multiverse
 deb-src $mirror $codename-backports main restricted universe multiverse
 deb-src $mirror $codename-security main restricted universe multiverse
 EOF
+        elif [[ "$DISTRO" == "debian" ]]; then
+            cat << EOF
+# Source packages
+deb-src $mirror $codename main contrib non-free
+deb-src $mirror $codename-updates main contrib non-free
+deb-src $mirror $codename-backports main contrib non-free
+deb-src $mirror-security $codename-security main contrib non-free
+EOF
+        fi
     fi
 }
 
@@ -115,20 +195,35 @@ configure_mirror() {
 }
 
 show_available_mirrors() {
-    log_info "Available APT mirrors:"
-    for mirror in "${!MIRRORS[@]}"; do
-        printf "  %-15s %s\n" "$mirror" "${MIRRORS[$mirror]}"
-    done
+    log_info "Available APT mirrors for $DISTRO:"
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        for mirror in "${!UBUNTU_MIRRORS[@]}"; do
+            printf "  %-15s %s\n" "$mirror" "${UBUNTU_MIRRORS[$mirror]}"
+        done
+    elif [[ "$DISTRO" == "debian" ]]; then
+        for mirror in "${!DEBIAN_MIRRORS[@]}"; do
+            printf "  %-15s %s\n" "$mirror" "${DEBIAN_MIRRORS[$mirror]}"
+        done
+    fi
 }
 
 interactive_mirror_selection() {
-    echo "Available mirrors:"
+    echo "Available mirrors for $DISTRO:"
     local i=1
-    local mirror_names=("${!MIRRORS[@]}")
-    for mirror in "${mirror_names[@]}"; do
-        printf "%d) %-15s %s\n" $i "$mirror" "${MIRRORS[$mirror]}"
-        ((i++))
-    done
+    local mirror_names=()
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        mirror_names=("${!UBUNTU_MIRRORS[@]}")
+        for mirror in "${mirror_names[@]}"; do
+            printf "%d) %-15s %s\n" $i "$mirror" "${UBUNTU_MIRRORS[$mirror]}"
+            ((i++))
+        done
+    elif [[ "$DISTRO" == "debian" ]]; then
+        mirror_names=("${!DEBIAN_MIRRORS[@]}")
+        for mirror in "${mirror_names[@]}"; do
+            printf "%d) %-15s %s\n" $i "$mirror" "${DEBIAN_MIRRORS[$mirror]}"
+            ((i++))
+        done
+    fi
     echo
     read -p "Select mirror (1-${#mirror_names[@]}): " choice
 
@@ -148,8 +243,8 @@ interactive_mirror_selection() {
 run_sources() {
     log_header "APT Sources Configuration"
 
-    # Detect Ubuntu version
-    detect_ubuntu_version || return 1
+    # Detect distribution (Ubuntu/Debian)
+    detect_distribution || return 1
 
     # Check if running interactively
     if [[ -t 0 ]]; then
@@ -198,9 +293,14 @@ run_sources() {
                 ;;
         esac
     else
-        # Non-interactive mode - use default mirror
-        log_info "Non-interactive mode: configuring with Kakao mirror (recommended for Korea)"
-        configure_mirror "kakao"
+        # Non-interactive mode - use default mirror based on distribution
+        if [[ "$DISTRO" == "ubuntu" ]]; then
+            log_info "Non-interactive mode: configuring with Kakao mirror (recommended for Korea)"
+            configure_mirror "kakao"
+        elif [[ "$DISTRO" == "debian" ]]; then
+            log_info "Non-interactive mode: configuring with Kakao mirror (recommended for Korea)"
+            configure_mirror "kakao"
+        fi
     fi
 
     return 0

@@ -6,10 +6,10 @@
 # =============================================================================
 
 # User configuration (from config or defaults)
-DEV_USERNAME="${USERNAME:-dev-user}"
+DEV_USERNAME="${USERNAME:-vscode-user}"
 DEV_USER_UID="${USER_UID:-1000}"
 DEV_USER_GID="${USER_GID:-1000}"
-DEV_GROUP="${USER_GROUP:-dev}"
+DEV_GROUP="${USER_GROUP:-vscode}"
 DEV_HOME="/home/$DEV_USERNAME"
 
 declare -a ESSENTIAL_GROUPS=(
@@ -53,10 +53,10 @@ declare -a DEV_DIRECTORIES=(
 
 run_user() {
     log_header "User and Permissions Setup"
-    
+
     local total_steps=7
     local current_step=0
-    
+
     # Step 1: Validate user configuration
 
     # Enforce umask for group-writable files
@@ -95,7 +95,7 @@ run_user() {
         log_error "User configuration validation failed"
         return 1
     }
-    
+
     # Step 2: Create development group
     ((current_step++))
     log_step $current_step $total_steps "Creating development group"
@@ -103,7 +103,7 @@ run_user() {
         log_error "Failed to create development group"
         return 1
     }
-    
+
     # Step 3: Create development user
     ((current_step++))
     log_step $current_step $total_steps "Creating development user"
@@ -111,7 +111,7 @@ run_user() {
         log_error "Failed to create development user"
         return 1
     }
-    
+
     # Step 4: Configure user groups
     ((current_step++))
     log_step $current_step $total_steps "Configuring user groups"
@@ -119,7 +119,7 @@ run_user() {
         log_error "Failed to configure user groups"
         return 1
     }
-    
+
     # Step 5: Set up user directories
     ((current_step++))
     log_step $current_step $total_steps "Setting up user directories"
@@ -127,7 +127,7 @@ run_user() {
         log_error "Failed to set up user directories"
         return 1
     }
-    
+
     # Step 6: Configure development permissions
     ((current_step++))
     log_step $current_step $total_steps "Configuring development permissions"
@@ -135,7 +135,7 @@ run_user() {
         log_error "Failed to configure development permissions"
         return 1
     }
-    
+
     # Step 7: Set up user environment
     ((current_step++))
     log_step $current_step $total_steps "Setting up user environment"
@@ -143,7 +143,7 @@ run_user() {
         log_error "Failed to set up user environment"
         return 1
     }
-    
+
     log_success "User and permissions setup completed successfully!"
     show_user_info
 }
@@ -154,24 +154,24 @@ run_user() {
 
 validate_user_config() {
     log_info "Validating user configuration..."
-    
+
     # Validate username
     if ! validate_username "$DEV_USERNAME"; then
         log_error "Invalid username: $DEV_USERNAME"
         return 1
     fi
-    
+
     # Validate UID/GID ranges
     if [[ $DEV_USER_UID -lt 1000 || $DEV_USER_UID -gt 65533 ]]; then
         log_error "UID $DEV_USER_UID is outside recommended range (1000-65533)"
         return 1
     fi
-    
+
     if [[ $DEV_USER_GID -lt 1000 || $DEV_USER_GID -gt 65533 ]]; then
         log_error "GID $DEV_USER_GID is outside recommended range (1000-65533)"
         return 1
     fi
-    
+
     # Check for UID/GID conflicts
     if getent passwd "$DEV_USER_UID" >/dev/null 2>&1; then
         local existing_user=$(getent passwd "$DEV_USER_UID" | cut -d: -f1)
@@ -180,7 +180,7 @@ validate_user_config() {
             return 1
         fi
     fi
-    
+
     if getent group "$DEV_USER_GID" >/dev/null 2>&1; then
         local existing_group=$(getent group "$DEV_USER_GID" | cut -d: -f1)
         if [[ "$existing_group" != "$DEV_GROUP" ]]; then
@@ -188,7 +188,7 @@ validate_user_config() {
             return 1
         fi
     fi
-    
+
     log_success "User configuration validation passed"
     return 0
 }
@@ -200,17 +200,17 @@ validate_user_config() {
 
 create_development_group() {
     log_info "Creating development group: $DEV_GROUP"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create group: $DEV_GROUP"
         return 0
     fi
-    
+
     if check_group_exists "$DEV_GROUP"; then
         log_info "Development group '$DEV_GROUP' already exists"
         return 0
     fi
-    
+
     # Create the group
     if groupadd -g "$DEV_USER_GID" "$DEV_GROUP" 2>/dev/null; then
         log_success "Group '$DEV_GROUP' created successfully"
@@ -218,7 +218,7 @@ create_development_group() {
         log_error "Failed to create group: $DEV_GROUP"
         return 1
     fi
-    
+
     log_success "Development group ready: $DEV_GROUP"
     return 0
 }
@@ -226,10 +226,10 @@ create_development_group() {
 
 ensure_system_groups() {
     log_debug "Ensuring required system groups exist..."
-    
+
     # Only create groups, don't add users to them
     local system_groups=("sudo")  # Remove "staff" from here
-    
+
     for group in "${system_groups[@]}"; do
         if ! check_group_exists "$group"; then
             log_info "Creating system group: $group"
@@ -247,11 +247,11 @@ ensure_system_groups() {
 
 create_development_user() {
     log_info "Creating development user: $DEV_USERNAME"
-    
+
     if check_user_exists "$DEV_USERNAME"; then
         local existing_uid=$(id -u "$DEV_USERNAME" 2>/dev/null)
         local existing_gid=$(id -g "$DEV_USERNAME" 2>/dev/null)
-        
+
         if [[ "$existing_uid" == "$DEV_USER_UID" && "$existing_gid" == "$DEV_USER_GID" ]]; then
             log_info "Development user '$DEV_USERNAME' already exists with correct UID/GID"
             return 0
@@ -259,7 +259,7 @@ create_development_user() {
             log_warn "User '$DEV_USERNAME' exists with different UID/GID"
             log_warn "Existing: UID=$existing_uid, GID=$existing_gid"
             log_warn "Expected: UID=$DEV_USER_UID, GID=$DEV_USER_GID"
-            
+
             if confirm_action "Continue with existing user?" "y"; then
                 log_info "Using existing user configuration"
                 return 0
@@ -269,18 +269,18 @@ create_development_user() {
             fi
         fi
     fi
-    
+
     # Create the user
     create_user_if_not_exists "$DEV_USERNAME" "$DEV_USER_UID" "$DEV_USER_GID" "$DEV_HOME" "/bin/bash" || {
         log_error "Failed to create development user"
         return 1
     }
-    
+
     # Set user password (optional)
     configure_user_password || {
         log_warn "Failed to configure user password"
     }
-    
+
     log_success "Development user created: $DEV_USERNAME"
     return 0
 }
@@ -288,12 +288,12 @@ create_development_user() {
 configure_user_password() {
     if [[ "${SET_USER_PASSWORD:-false}" == "true" ]]; then
         log_info "Configuring user password..."
-        
+
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
             log_info "[DRY RUN] Would configure user password"
             return 0
         fi
-        
+
         if [[ -n "${USER_PASSWORD:-}" ]]; then
             # Set password from environment variable
             echo "$DEV_USERNAME:$USER_PASSWORD" | chpasswd
@@ -309,7 +309,7 @@ configure_user_password() {
     else
         log_debug "Skipping password configuration (SET_USER_PASSWORD=false)"
     fi
-    
+
     return 0
 }
 
@@ -321,26 +321,26 @@ configure_user_password() {
 
 configure_user_groups() {
     log_info "Configuring user group memberships..."
-    
+
     # Ensure system groups exist first
     ensure_system_groups
-    
+
     # Only add to essential groups
     log_info "Adding user to essential groups: ${ESSENTIAL_GROUPS[*]}"
-    
+
     for group in "${ESSENTIAL_GROUPS[@]}"; do
         # Skip the primary group (already set during user creation)
         if [[ "$group" == "$USER_GROUP" ]]; then
             log_debug "Skipping primary group: $group"
             continue
         fi
-        
+
         # Check if group exists
         if ! check_group_exists "$group"; then
             log_warn "Group '$group' does not exist, skipping"
             continue
         fi
-        
+
         # Add user to group
         log_info "Adding user '$DEV_USERNAME' to group '$group'"
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
@@ -352,10 +352,10 @@ configure_user_groups() {
             }
         fi
     done
-    
+
     # Verify no unexpected groups were added
     verify_user_groups
-    
+
     log_success "User group configuration completed"
 }
 
@@ -375,31 +375,31 @@ configure_optional_groups_auto() {
 
 verify_user_groups() {
     log_debug "Verifying user group memberships..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would verify user groups"
         return 0
     fi
-    
+
     local user_groups=$(groups "$DEV_USERNAME" 2>/dev/null | cut -d: -f2)
-    
+
     log_debug "User '$DEV_USERNAME' is member of: $user_groups"
-    
+
     # Check critical groups
     local critical_groups=("$DEV_GROUP" "sudo")
     local missing_groups=()
-    
+
     for group in "${critical_groups[@]}"; do
         if ! echo "$user_groups" | grep -q "\b$group\b"; then
             missing_groups+=("$group")
         fi
     done
-    
+
     if [[ ${#missing_groups[@]} -gt 0 ]]; then
         log_warn "User missing from critical groups: ${missing_groups[*]}"
         return 1
     fi
-    
+
     log_debug "User group verification passed"
     return 0
 }
@@ -410,89 +410,89 @@ verify_user_groups() {
 
 setup_user_directories() {
     log_info "Setting up user directories..."
-    
+
     # Create user home directory if it doesn't exist
     if [[ ! -d "$DEV_HOME" ]]; then
         log_info "Creating user home directory: $DEV_HOME"
         create_directory "$DEV_HOME" "$DEV_USERNAME:$DEV_GROUP" "755"
     fi
-    
+
     # Create standard user directories
     create_user_standard_directories || {
         log_error "Failed to create standard user directories"
         return 1
     }
-    
+
     # Create development directories (optional)
     if [[ "${CREATE_DEV_DIRS:-true}" == "true" ]]; then
         create_development_directories || {
             log_warn "Failed to create some development directories"
         }
     fi
-    
+
     # Set proper ownership and permissions
     fix_directory_ownership || {
         log_error "Failed to fix directory ownership"
         return 1
     }
-    
+
     log_success "User directories setup completed"
     return 0
 }
 
 create_user_standard_directories() {
     log_debug "Creating standard user directories..."
-    
+
     for dir in "${USER_DIRECTORIES[@]}"; do
         local full_path="$DEV_HOME/$dir"
         log_debug "Creating directory: $full_path"
-        
+
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
             log_info "[DRY RUN] Would create: $full_path"
             continue
         fi
-        
+
         create_directory "$full_path" "$DEV_USERNAME:$DEV_GROUP" "755"
     done
-    
+
     return 0
 }
 
 create_development_directories() {
     log_debug "Creating development directories..."
-    
+
     for dir in "${DEV_DIRECTORIES[@]}"; do
         local full_path="$DEV_HOME/$dir"
         log_debug "Creating development directory: $full_path"
-        
+
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
             log_info "[DRY RUN] Would create: $full_path"
             continue
         fi
-        
+
         create_directory "$full_path" "$DEV_USERNAME:$DEV_GROUP" "755"
     done
-    
+
     return 0
 }
 
 fix_directory_ownership() {
     log_debug "Fixing directory ownership and permissions..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would fix ownership of $DEV_HOME"
         return 0
     fi
-    
+
     # Ensure user owns their home directory
     chown -R "$DEV_USERNAME:$DEV_GROUP" "$DEV_HOME" || {
         log_error "Failed to set ownership of user home directory"
         return 1
     }
-    
+
     # Set proper permissions for home directory
     chmod 755 "$DEV_HOME"
-    
+
     # Set restrictive permissions for sensitive directories
     local sensitive_dirs=(".ssh" ".gnupg" ".config")
     for dir in "${sensitive_dirs[@]}"; do
@@ -502,7 +502,7 @@ fix_directory_ownership() {
             log_debug "Set restrictive permissions for: $full_path"
         fi
     done
-    
+
     return 0
 }
 
@@ -513,22 +513,22 @@ fix_directory_ownership() {
 
 configure_development_permissions() {
     log_info "Configuring development environment permissions..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would configure development permissions"
         return 0
     fi
-    
+
     # Only do essential permission configuration
     log_debug "Setting basic development permissions..."
-    
+
     # Ensure user can write to their own home directory
     if [[ -d "$DEV_HOME" ]]; then
         chown "$DEV_USERNAME:$DEV_GROUP" "$DEV_HOME"
         chmod 755 "$DEV_HOME"
         log_debug "Home directory permissions set"
     fi
-    
+
     # Create user's local bin directory if it doesn't exist
     local local_bin="$DEV_HOME/.local/bin"
     if [[ ! -d "$local_bin" ]]; then
@@ -537,22 +537,22 @@ configure_development_permissions() {
         chmod 755 "$local_bin"
         log_debug "Created user local bin directory"
     fi
-    
+
     # Configure setup directory permissions for continued access
     configure_setup_directory_permissions
-    
+
     log_success "Development permissions configured"
     return 0
 }
 
 configure_setup_directory_permissions() {
     log_info "Configuring setup directory permissions for continued access..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would configure setup directory permissions"
         return 0
     fi
-    
+
     # Get the setup directory path (where this script is running from)
     local setup_dir
     if [[ -n "${SCRIPT_DIR:-}" ]]; then
@@ -561,14 +561,14 @@ configure_setup_directory_permissions() {
         # Fallback: try to determine from current working directory or script location
         setup_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
     fi
-    
+
     if [[ ! -d "$setup_dir" ]]; then
         log_warn "Setup directory not found: $setup_dir"
         return 1
     fi
-    
+
     log_debug "Configuring permissions for setup directory: $setup_dir"
-    
+
     # Check if we're in /opt (preferred location)
     if [[ "$setup_dir" == /opt/ml-dev-bootstrap ]]; then
         log_debug "Setup directory is already in /opt - using optimal permissions"
@@ -577,10 +577,10 @@ configure_setup_directory_permissions() {
         log_debug "Setup directory not in /opt - creating proper setup"
         create_opt_setup "$setup_dir"
     fi
-    
+
     # Create user-friendly symlinks
     create_user_symlinks
-    
+
     log_success "Setup directory permissions configured for group access"
     log_info "User '$DEV_USERNAME' can now continue running setup scripts"
     log_info "Access via: ~/setup or /opt/ml-dev-bootstrap"
@@ -589,35 +589,35 @@ configure_setup_directory_permissions() {
 
 ensure_opt_permissions() {
     local setup_dir="$1"
-    
+
     log_debug "Ensuring optimal permissions for /opt setup directory"
-    
+
     # Set proper ownership and permissions for /opt location
     chown -R root:"$DEV_GROUP" "$setup_dir" 2>/dev/null || {
         log_warn "Failed to set ownership on /opt setup directory"
         return 1
     }
-    
+
     # Set directory permissions (775 with setgid)
     find "$setup_dir" -type d -exec chmod 2775 {} \; 2>/dev/null || {
         log_warn "Failed to set directory permissions"
     }
-    
+
     # Set file permissions (664 for regular files, 774 for scripts)
     find "$setup_dir" -type f -not -name "*.sh" -exec chmod 664 {} \; 2>/dev/null || true
     find "$setup_dir" -name "*.sh" -type f -exec chmod 774 {} \; 2>/dev/null || {
         log_warn "Failed to set script permissions"
     }
-    
+
     log_debug "Optimal permissions set for /opt setup directory"
 }
 
 create_opt_setup() {
     local current_dir="$1"
     local opt_dir="/opt/ml-dev-bootstrap"
-    
+
     log_info "Moving setup files to /opt for better accessibility"
-    
+
     # Copy to /opt if not already there
     if [[ "$current_dir" != "$opt_dir" ]]; then
         if [[ ! -d "$opt_dir" ]]; then
@@ -626,10 +626,10 @@ create_opt_setup() {
                 return 1
             }
         fi
-        
+
         # Set permissions on /opt copy
         ensure_opt_permissions "$opt_dir"
-        
+
         # Replace current directory with symlink
         if [[ -d "$current_dir" ]]; then
             rm -rf "$current_dir" 2>/dev/null || true
@@ -643,9 +643,9 @@ create_opt_setup() {
 create_user_symlinks() {
     local opt_dir="/opt/ml-dev-bootstrap"
     local user_home="/home/$DEV_USERNAME"
-    
+
     log_debug "Creating user-friendly symlinks"
-    
+
     # Create symlink in user's home directory
     if [[ -d "$user_home" ]]; then
         local user_symlink="$user_home/setup"
@@ -655,7 +655,7 @@ create_user_symlinks() {
             }
         fi
     fi
-    
+
     # Ensure /opt symlink exists for backward compatibility
     local opt_symlink="/opt/setup"
     if [[ ! -L "$opt_symlink" ]]; then
@@ -666,19 +666,19 @@ create_user_symlinks() {
 create_accessible_symlink() {
     local setup_dir="$1"
     local symlink_target="/opt/ml-dev-bootstrap"
-    
+
     log_info "Creating accessible symlink at $symlink_target"
-    
+
     # Create symlink in /opt (which is accessible to all users)
     if [[ -d "/opt" ]]; then
         ln -sf "$setup_dir" "$symlink_target" 2>/dev/null || {
             log_warn "Failed to create symlink in /opt"
             return 1
         }
-        
+
         # Set permissions on the symlink
         chmod 755 "$symlink_target" 2>/dev/null || true
-        
+
         log_success "Created symlink: $symlink_target -> $setup_dir"
         log_info "Users can now access setup files via: $symlink_target"
         return 0
@@ -690,62 +690,62 @@ create_accessible_symlink() {
 
 configure_conda_permissions() {
     local conda_path="${CONDA_PATH:-/opt/conda}"
-    
+
     if [[ ! -d "$conda_path" ]]; then
         log_debug "Conda directory not found: $conda_path"
         return 1
     fi
-    
+
     log_debug "Configuring conda permissions for development group..."
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would configure conda permissions"
         return 0
     fi
-    
+
     # Make conda accessible to development group
     chgrp -R "$DEV_GROUP" "$conda_path" 2>/dev/null || {
         log_warn "Failed to change conda group ownership"
         return 1
     }
-    
+
     # Set group read/execute permissions
     find "$conda_path" -type d -exec chmod g+rx {} \; 2>/dev/null || {
         log_warn "Failed to set conda directory permissions"
     }
-    
+
     find "$conda_path" -type f -executable -exec chmod g+rx {} \; 2>/dev/null || {
         log_warn "Failed to set conda executable permissions"
     }
-    
+
     log_debug "Conda permissions configured"
     return 0
 }
 
 configure_system_dev_permissions() {
     log_debug "Configuring system development directory permissions..."
-    
+
     local dev_dirs=("/usr/local" "/opt")
-    
+
     for dir in "${dev_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             configure_dev_directory_permissions "$dir"
         fi
     done
-    
+
     return 0
 }
 
 configure_dev_directory_permissions() {
     local dir="$1"
-    
+
     log_debug "Configuring permissions for: $dir"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would configure permissions for: $dir"
         return 0
     fi
-    
+
     # Create development subdirectories if they don't exist
     local dev_subdirs=("bin" "lib" "include" "share")
     for subdir in "${dev_subdirs[@]}"; do
@@ -753,14 +753,14 @@ configure_dev_directory_permissions() {
         if [[ ! -d "$full_path" ]]; then
             mkdir -p "$full_path" 2>/dev/null || continue
         fi
-        
+
         # Set group ownership to development group
         chgrp "$DEV_GROUP" "$full_path" 2>/dev/null || continue
-        
+
         # Set group write permissions
         chmod g+w "$full_path" 2>/dev/null || continue
     done
-    
+
     return 0
 }
 
@@ -769,13 +769,13 @@ configure_docker_permissions() {
         log_debug "Docker group does not exist"
         return 1
     fi
-    
+
     log_debug "Configuring Docker permissions..."
-    
+
     # User should already be added to docker group in configure_user_groups
     # Just verify the docker socket permissions
     local docker_socket="/var/run/docker.sock"
-    
+
     if [[ -S "$docker_socket" ]]; then
         if [[ "${DRY_RUN:-false}" != "true" ]]; then
             chgrp docker "$docker_socket" 2>/dev/null || {
@@ -786,7 +786,7 @@ configure_docker_permissions() {
     else
         log_debug "Docker socket not found"
     fi
-    
+
     return 0
 }
 
@@ -795,17 +795,17 @@ configure_web_dev_permissions() {
         log_debug "www-data group does not exist"
         return 1
     fi
-    
+
     log_debug "Configuring web development permissions..."
-    
+
     local web_dirs=("/var/www" "/var/log/nginx" "/var/log/apache2")
-    
+
     for dir in "${web_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             if [[ "${DRY_RUN:-false}" != "true" ]]; then
                 # Add development group read access to web directories
                 chmod g+r "$dir" 2>/dev/null || continue
-                
+
                 # For www directory, add write access for development
                 if [[ "$dir" == "/var/www" ]]; then
                     chmod g+w "$dir" 2>/dev/null || continue
@@ -814,7 +814,7 @@ configure_web_dev_permissions() {
             log_debug "Configured permissions for: $dir"
         fi
     done
-    
+
     return 0
 }
 
@@ -824,47 +824,47 @@ configure_web_dev_permissions() {
 
 setup_user_environment() {
     log_info "Setting up user environment..."
-    
+
     # Create basic shell configuration
     create_user_bashrc || {
         log_error "Failed to create user .bashrc"
         return 1
     }
-    
+
     # Create user profile
     create_user_profile || {
         log_warn "Failed to create user profile"
     }
-    
+
     # Set up SSH directory (if needed)
     setup_ssh_directory || {
         log_debug "SSH directory setup skipped"
     }
-    
+
     # Create basic development configuration
     create_dev_configuration || {
         log_warn "Failed to create development configuration"
     }
-    
+
     log_success "User environment setup completed"
     return 0
 }
 
 create_user_bashrc() {
     local bashrc_file="$DEV_HOME/.bashrc"
-    
+
     log_debug "Creating user .bashrc: $bashrc_file"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create user .bashrc"
         return 0
     fi
-    
+
     # Backup existing .bashrc if it exists
     if [[ -f "$bashrc_file" ]]; then
         backup_file "$bashrc_file"
     fi
-    
+
     # Create new .bashrc
     cat > "$bashrc_file" << 'EOF'
 # ~/.bashrc: executed by bash(1) for non-login shells.
@@ -956,25 +956,25 @@ export LANG=en_US.UTF-8
 export LANGUAGE=en_US:ko_KR
 export LC_ALL=en_US.UTF-8
 EOF
-    
+
     # Set ownership and permissions
     chown "$DEV_USERNAME:$DEV_GROUP" "$bashrc_file"
     chmod 644 "$bashrc_file"
-    
+
     log_debug "User .bashrc created successfully"
     return 0
 }
 
 create_user_profile() {
     local profile_file="$DEV_HOME/.profile"
-    
+
     log_debug "Creating user .profile: $profile_file"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create user .profile"
         return 0
     fi
-    
+
     # Create .profile if it doesn't exist
     if [[ ! -f "$profile_file" ]]; then
         cat > "$profile_file" << 'EOF'
@@ -996,14 +996,14 @@ if [ -n "$BASH_VERSION" ]; then
     fi
 fi
 EOF
-        
+
         chown "$DEV_USERNAME:$DEV_GROUP" "$profile_file"
         chmod 644 "$profile_file"
         log_debug "User .profile created"
     else
         log_debug "User .profile already exists"
     fi
-    
+
     return 0
 }
 
@@ -1011,19 +1011,19 @@ setup_ssh_directory() {
     if [[ "${SETUP_SSH:-false}" != "true" ]]; then
         return 1
     fi
-    
+
     local ssh_dir="$DEV_HOME/.ssh"
-    
+
     log_debug "Setting up SSH directory: $ssh_dir"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would setup SSH directory"
         return 0
     fi
-    
+
     # Create .ssh directory
     create_directory "$ssh_dir" "$DEV_USERNAME:$DEV_GROUP" "700"
-    
+
     # Create basic SSH config
     local ssh_config="$ssh_dir/config"
     if [[ ! -f "$ssh_config" ]]; then
@@ -1038,7 +1038,7 @@ EOF
         chown "$DEV_USERNAME:$DEV_GROUP" "$ssh_config"
         chmod 600 "$ssh_config"
     fi
-    
+
     # Create authorized_keys file
     local auth_keys="$ssh_dir/authorized_keys"
     if [[ ! -f "$auth_keys" ]]; then
@@ -1046,39 +1046,39 @@ EOF
         chown "$DEV_USERNAME:$DEV_GROUP" "$auth_keys"
         chmod 600 "$auth_keys"
     fi
-    
+
     log_debug "SSH directory setup completed"
     return 0
 }
 
 create_dev_configuration() {
     log_debug "Creating development configuration files..."
-    
+
     # Create .gitconfig (basic template - will be configured by git module)
     create_basic_gitconfig
-    
+
     # Create .vimrc
     create_basic_vimrc
-    
+
     # Create development aliases
     create_bash_aliases
-    
+
     return 0
 }
 
 create_basic_gitconfig() {
     local gitconfig="$DEV_HOME/.gitconfig"
-    
+
     if [[ -f "$gitconfig" ]]; then
         log_debug "Git config already exists, skipping"
         return 0
     fi
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create basic .gitconfig"
         return 0
     fi
-    
+
     cat > "$gitconfig" << 'EOF'
 [user]
     # Will be configured by git module
@@ -1096,26 +1096,26 @@ create_basic_gitconfig() {
 [color]
     ui = auto
 EOF
-    
+
     chown "$DEV_USERNAME:$DEV_GROUP" "$gitconfig"
     chmod 644 "$gitconfig"
-    
+
     return 0
 }
 
 create_basic_vimrc() {
     local vimrc="$DEV_HOME/.vimrc"
-    
+
     if [[ -f "$vimrc" ]]; then
         log_debug "Vim config already exists, skipping"
         return 0
     fi
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create basic .vimrc"
         return 0
     fi
-    
+
     cat > "$vimrc" << 'EOF'
 " Basic vim configuration
 set nocompatible
@@ -1154,26 +1154,26 @@ nnoremap <C-h> :set hlsearch!<CR>
 " Auto-save when losing focus
 au FocusLost * :wa
 EOF
-    
+
     chown "$DEV_USERNAME:$DEV_GROUP" "$vimrc"
     chmod 644 "$vimrc"
-    
+
     return 0
 }
 
 create_bash_aliases() {
     local aliases_file="$DEV_HOME/.bash_aliases"
-    
+
     if [[ -f "$aliases_file" ]]; then
         log_debug "Bash aliases already exist, skipping"
         return 0
     fi
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create .bash_aliases"
         return 0
     fi
-    
+
     cat > "$aliases_file" << 'EOF'
 # Development aliases
 alias ll='ls -alF'
@@ -1230,10 +1230,10 @@ alias cda='conda deactivate'
 alias cl='conda list'
 alias ce='conda env list'
 EOF
-    
+
     chown "$DEV_USERNAME:$DEV_GROUP" "$aliases_file"
     chmod 644 "$aliases_file"
-    
+
     return 0
 }
 
@@ -1243,13 +1243,13 @@ EOF
 
 show_user_info() {
     log_header "User Configuration Summary"
-    
+
     echo "Development User: $DEV_USERNAME"
     echo "User ID: $DEV_USER_UID"
     echo "Primary Group: $DEV_GROUP (GID: $DEV_USER_GID)"
     echo "Home Directory: $DEV_HOME"
     echo ""
-    
+
     if [[ "${DRY_RUN:-false}" != "true" ]]; then
         echo "User Groups:"
         if check_user_exists "$DEV_USERNAME"; then
@@ -1257,7 +1257,7 @@ show_user_info() {
         else
             echo "  User not found"
         fi
-        
+
         echo ""
         echo "Home Directory Contents:"
         if [[ -d "$DEV_HOME" ]]; then
@@ -1269,7 +1269,7 @@ show_user_info() {
         else
             echo "  Home directory not found"
         fi
-        
+
         echo ""
         echo "User Permissions:"
         echo "  Sudo access: $(groups "$DEV_USERNAME" 2>/dev/null | grep -q sudo && echo "Yes" || echo "No")"
@@ -1278,7 +1278,7 @@ show_user_info() {
     else
         echo "[DRY RUN] User information would be displayed here"
     fi
-    
+
     echo ""
     echo "Configuration Files:"
     local config_files=(".bashrc" ".profile" ".gitconfig" ".vimrc" ".bash_aliases")
@@ -1290,9 +1290,9 @@ show_user_info() {
             echo "  ✗ $file (missing)"
         fi
     done
-    
+
     log_separator
-    
+
     # Show usage instructions
     log_info "Usage Instructions:"
     echo "  • Switch to development user: su - $DEV_USERNAME"
@@ -1308,19 +1308,19 @@ show_user_info() {
 
 test_user_environment() {
     local test_user="${1:-$DEV_USERNAME}"
-    
+
     log_info "Testing user environment for: $test_user"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would test user environment"
         return 0
     fi
-    
+
     if ! check_user_exists "$test_user"; then
         log_error "User does not exist: $test_user"
         return 1
     fi
-    
+
     # Test basic shell access
     if sudo -u "$test_user" -i bash -c 'echo "Shell access test"' >/dev/null 2>&1; then
         log_success "Shell access: OK"
@@ -1328,7 +1328,7 @@ test_user_environment() {
         log_error "Shell access: FAILED"
         return 1
     fi
-    
+
     # Test home directory access
     if sudo -u "$test_user" -i bash -c 'ls ~ >/dev/null'; then
         log_success "Home directory access: OK"
@@ -1336,7 +1336,7 @@ test_user_environment() {
         log_error "Home directory access: FAILED"
         return 1
     fi
-    
+
     # Test sudo access
     if sudo -u "$test_user" -i bash -c 'sudo -n true' >/dev/null 2>&1; then
         log_success "Sudo access: OK (passwordless)"
@@ -1345,16 +1345,16 @@ test_user_environment() {
     else
         log_warn "Sudo access: Limited or not configured"
     fi
-    
+
     log_success "User environment test completed"
     return 0
 }
 
 cleanup_user_environment() {
     local user_to_cleanup="${1:-$DEV_USERNAME}"
-    
+
     log_warn "Cleaning up user environment for: $user_to_cleanup"
-    
+
     if ! confirm_action "This will remove user $user_to_cleanup and their home directory. Continue?" "n"; then
         log_info "Cleanup cancelled"
         return 0
@@ -1364,7 +1364,7 @@ cleanup_user_environment() {
         log_info "[DRY RUN] Would cleanup user: $user_to_cleanup"
         return 0
     fi
-    
+
     # Stop any processes owned by the user
     if check_user_exists "$user_to_cleanup"; then
         log_info "Stopping processes owned by user..."
@@ -1372,7 +1372,7 @@ cleanup_user_environment() {
         sleep 2
         pkill -9 -u "$user_to_cleanup" 2>/dev/null || log_debug "No processes to force kill"
     fi
-    
+
     # Remove user and home directory
     if userdel -r "$user_to_cleanup" 2>/dev/null; then
         log_success "User $user_to_cleanup removed successfully"
@@ -1380,7 +1380,7 @@ cleanup_user_environment() {
         log_error "Failed to remove user: $user_to_cleanup"
         return 1
     fi
-    
+
     # Remove development group if it's empty
     if check_group_exists "$DEV_GROUP"; then
         local group_members=$(getent group "$DEV_GROUP" | cut -d: -f4)
@@ -1394,7 +1394,7 @@ cleanup_user_environment() {
             log_info "Development group has other members, keeping: $DEV_GROUP"
         fi
     fi
-    
+
     log_success "User cleanup completed"
     return 0
 }
@@ -1417,12 +1417,12 @@ create_user_if_not_exists() {
     local gid="$3"
     local home_dir="$4"
     local shell="$5"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_info "[DRY RUN] Would create user: $username"
         return 0
     fi
-    
+
     useradd -u "$uid" -g "$gid" -d "$home_dir" -s "$shell" -m "$username"
 }
 
@@ -1430,7 +1430,7 @@ create_directory() {
     local dir_path="$1"
     local ownership="$2"
     local permissions="$3"
-    
+
     mkdir -p "$dir_path"
     if [[ -n "$ownership" ]]; then
         chown "$ownership" "$dir_path"
@@ -1443,15 +1443,15 @@ create_directory() {
 confirm_action() {
     local prompt="$1"
     local default="${2:-n}"
-    
+
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         return 0
     fi
-    
+
     local response
     read -p "$prompt [y/N]: " response
     response=${response:-$default}
-    
+
     case "$response" in
         [yY]|[yY][eE][sS]) return 0 ;;
         *) return 1 ;;
@@ -1470,7 +1470,7 @@ backup_file() {
 
 diagnose_user_issues() {
     log_header "User Configuration Diagnostics"
-    
+
     echo "User Information:"
     if check_user_exists "$DEV_USERNAME"; then
         echo "  ✓ User exists: $DEV_USERNAME"
@@ -1481,7 +1481,7 @@ diagnose_user_issues() {
     else
         echo "  ✗ User does not exist: $DEV_USERNAME"
     fi
-    
+
     echo ""
     echo "Group Information:"
     if check_group_exists "$DEV_GROUP"; then
@@ -1492,7 +1492,7 @@ diagnose_user_issues() {
     else
         echo "  ✗ Development group does not exist: $DEV_GROUP"
     fi
-    
+
     echo ""
     echo "System Groups:"
     local system_groups=("sudo" "docker" "www-data")
@@ -1508,14 +1508,14 @@ diagnose_user_issues() {
             echo "  ✗ $group (missing)"
         fi
     done
-    
+
     echo ""
     echo "Home Directory:"
     if [[ -d "$DEV_HOME" ]]; then
         echo "  ✓ Home directory exists: $DEV_HOME"
         echo "  Owner: $(stat -c '%U:%G' "$DEV_HOME")"
         echo "  Permissions: $(stat -c '%a' "$DEV_HOME")"
-        
+
         echo "  Configuration files:"
         local config_files=(".bashrc" ".profile" ".gitconfig" ".vimrc")
         for file in "${config_files[@]}"; do
@@ -1529,7 +1529,7 @@ diagnose_user_issues() {
     else
         echo "  ✗ Home directory does not exist: $DEV_HOME"
     fi
-    
+
     echo ""
     echo "Permissions Test:"
     if check_user_exists "$DEV_USERNAME"; then
@@ -1541,7 +1541,7 @@ diagnose_user_issues() {
         else
             echo "  ✗ No sudo access"
         fi
-        
+
         # Test home directory write access
         if sudo -u "$DEV_USERNAME" touch "$DEV_HOME/.test_write" 2>/dev/null; then
             sudo -u "$DEV_USERNAME" rm -f "$DEV_HOME/.test_write"
@@ -1549,7 +1549,7 @@ diagnose_user_issues() {
         else
             echo "  ✗ Home directory write access failed"
         fi
-        
+
         # Test conda access (if conda exists)
         if [[ -d "${CONDA_PATH:-/opt/conda}" ]]; then
             if sudo -u "$DEV_USERNAME" test -r "${CONDA_PATH:-/opt/conda}/bin/conda"; then
@@ -1561,15 +1561,15 @@ diagnose_user_issues() {
     else
         echo "  ✗ Cannot test permissions (user does not exist)"
     fi
-    
+
     log_separator
 }
 
 fix_common_user_issues() {
     log_header "Fixing Common User Issues"
-    
+
     local issues_fixed=0
-    
+
     # Fix 1: Ensure user exists with correct UID/GID
     if ! check_user_exists "$DEV_USERNAME"; then
         log_info "Issue: User does not exist"
@@ -1577,7 +1577,7 @@ fix_common_user_issues() {
             create_development_user && ((issues_fixed++))
         fi
     fi
-    
+
     # Fix 2: Ensure development group exists
     if ! check_group_exists "$DEV_GROUP"; then
         log_info "Issue: Development group does not exist"
@@ -1585,7 +1585,7 @@ fix_common_user_issues() {
             create_development_group && ((issues_fixed++))
         fi
     fi
-    
+
     # Fix 3: Fix home directory ownership
     if [[ -d "$DEV_HOME" ]]; then
         local current_owner=$(stat -c '%U:%G' "$DEV_HOME")
@@ -1596,18 +1596,18 @@ fix_common_user_issues() {
             fi
         fi
     fi
-    
+
     # Fix 4: Ensure user is in required groups
     if check_user_exists "$DEV_USERNAME"; then
         local user_groups=$(groups "$DEV_USERNAME" 2>/dev/null | cut -d: -f2)
         local missing_groups=()
-        
+
         for group in "sudo" "$DEV_GROUP"; do
             if ! echo "$user_groups" | grep -q "\b$group\b"; then
                 missing_groups+=("$group")
             fi
         done
-        
+
         if [[ ${#missing_groups[@]} -gt 0 ]]; then
             log_info "Issue: User missing from groups: ${missing_groups[*]}"
             if confirm_action "Add user to missing groups?" "y"; then
@@ -1619,7 +1619,7 @@ fix_common_user_issues() {
             fi
         fi
     fi
-    
+
     # Fix 5: Recreate missing configuration files
     local config_files=(".bashrc" ".profile")
     for file in "${config_files[@]}"; do
@@ -1634,13 +1634,13 @@ fix_common_user_issues() {
             fi
         fi
     done
-    
+
     if [[ $issues_fixed -gt 0 ]]; then
         log_success "Fixed $issues_fixed user issues"
     else
         log_info "No issues found or no fixes applied"
     fi
-    
+
     return 0
 }
 

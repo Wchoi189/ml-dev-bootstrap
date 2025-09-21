@@ -1,0 +1,199 @@
+[2025-09-20 20:22:30] [INFO] Executing module: locale
+
+============================================================
+Locale Configuration Setup
+============================================================
+
+
+------------------------------------------------------------
+Step 1/6: Installing locale packages
+------------------------------------------------------------
+
+[2025-09-20 20:22:30] [INFO] Installing locale support packages...
+[2025-09-20 20:22:30] [SUCCESS] All locale packages already installed
+
+------------------------------------------------------------
+Step 2/6: Installing font packages
+------------------------------------------------------------
+
+[2025-09-20 20:22:30] [INFO] Installing font packages for multilingual support...
+[2025-09-20 20:22:30] [INFO] Ensuring the following packages are installed: fontconfig fonts-nanum fonts-nanum-extra fonts-dejavu-core fonts-liberation
+[2025-09-20 20:22:36] [SUCCESS] Font packages installed successfully
+
+------------------------------------------------------------
+Step 3/6: Generating system locales
+------------------------------------------------------------
+
+[2025-09-20 20:22:36] [INFO] Generating minimal locales: en_US.UTF-8 ko_KR.UTF-8
+[2025-09-20 20:22:36] [INFO] Generating only specified locales...
+[2025-09-20 20:22:38] [SUCCESS] Successfully generated 2 locales: en_US.UTF-8, ko_KR.UTF-8
+
+------------------------------------------------------------
+Step 4/6: Setting default locale
+------------------------------------------------------------
+
+[2025-09-20 20:22:38] [INFO] Setting default system locale to: en_US.UTF-8
+[2025-09-20 20:22:38] [COMMAND] update-locale LANG=en_US.UTF-8
+[2025-09-20 20:22:38] [SUCCESS] Default locale set successfully
+
+------------------------------------------------------------
+Step 5/6: Configuring locale environment
+------------------------------------------------------------
+
+[2025-09-20 20:22:38] [INFO] Configuring locale environment variables...
+[2025-09-20 20:22:38] [SUCCESS] Locale environment configured successfully
+
+------------------------------------------------------------
+Step 6/6: Verifying locale configuration
+------------------------------------------------------------
+
+[2025-09-20 20:22:38] [INFO] Verifying locale configuration...
+[2025-09-20 20:22:38] [WARN] Current LANG (C.UTF-8) differs from expected (en_US.UTF-8)
+[2025-09-20 20:22:38] [WARN] Locale changes will take effect after logout/restart
+[2025-09-20 20:22:38] [SUCCESS] Locale configuration verification completed
+[2025-09-20 20:22:38] [SUCCESS] Locale configuration completed successfully!
+
+============================================================
+Locale Configuration Summary
+============================================================
+
+[2025-09-20 20:22:38] [INFO] Important Notes:
+[2025-09-20 20:22:38] [SUCCESS] Module locale completed successfully
+[2025-09-20 20:22:49] [INFO] Executing module: envmgr
+
+============================================================
+Python Environment Manager Setup
+============================================================
+
+[2025-09-20 20:22:49] [INFO] Running as root - installing environment managers system-wide
+[2025-09-20 20:22:49] [INFO] Selected environment managers: pyenv poetry
+[2025-09-20 20:22:49] [INFO] [pyenv] Target user: vscode (/home/vscode)
+[2025-09-20 20:22:49] [INFO] [pyenv] pyenv not found for vscode, proceeding with installation
+[2025-09-20 20:22:50] [INFO] [pyenv] Installing pyenv for vscode
+[2025-09-20 20:22:55] [INFO] [pyenv] Requested Python version(s): 3.10.18
+[2025-09-20 20:22:55] [INFO] [pyenv] Installing Python 3.10.18 for vscode
+[2025-09-20 20:23:53] [INFO] [pyenv] Python 3.10.18 installed (logs: /tmp/pyenv-build-3.10.18-1758367375.log)
+[2025-09-20 20:23:53] [SUCCESS] [pyenv] Installed for vscode
+[2025-09-20 20:23:53] [INFO] [poetry] Installing system-wide to /opt/pypoetry (group: vscode)
+[2025-09-20 20:23:58] [INFO] [poetry] Attempting official Poetry installer...
+[2025-09-20 20:24:09] [SUCCESS] [poetry] Official installer succeeded
+[2025-09-20 20:24:10] [SUCCESS] [poetry] Installed system-wide at /opt/pypoetry
+[2025-09-20 20:24:10] [INFO] Created global PATH profile at /etc/profile.d/ml-dev-tools.sh
+[2025-09-20 20:24:10] [INFO] Created global pyenv profile at /etc/profile.d/pyenv.sh
+[2025-09-20 20:24:10] [INFO] Summary of installed environment managers:
+[2025-09-20 20:24:10] [SUCCESS] Environment manager setup completed.
+[2025-09-20 20:24:10] [SUCCESS] Module envmgr completed successfully
+[2025-09-20 20:24:18] [INFO] Executing module: sources
+
+============================================================
+APT Sources Configuration
+============================================================
+
+[2025-09-20 20:24:18] [ERROR] Unable to detect Ubuntu version
+[2025-09-20 20:24:18] [ERROR] Module sources failed with exit code 1
+[2025-09-20 20:24:26] [INFO] Executing module: prompt
+
+============================================================
+Color Shell Prompt Setup
+============================================================
+
+[2025-09-20 20:24:26] [INFO] Configuring prompt for root user
+
+------------------------------------------------------------
+Step 1/5: Validating prompt configuration
+------------------------------------------------------------
+
+[2025-09-20 20:24:26] [INFO] Validating prompt configuration...
+[2025-09-20 20:24:26] [SUCCESS] Prompt configuration validated
+
+------------------------------------------------------------
+Step 2/5: Installing prompt dependencies
+------------------------------------------------------------
+
+[2025-09-20 20:24:26] [INFO] Installing prompt dependencies...
+[2025-09-20 20:24:26] [SUCCESS] All prompt dependencies already available
+
+------------------------------------------------------------
+Step 3/5: Creating prompt functions
+------------------------------------------------------------
+
+[2025-09-20 20:24:26] [INFO] Creating prompt functions...
+[2025-09-20 20:24:27] [SUCCESS] Prompt functions created successfully
+
+------------------------------------------------------------
+Step 4/5: Configuring user prompt
+------------------------------------------------------------
+
+[2025-09-20 20:24:27] [INFO] Configuring user prompt...
+[2025-09-20 20:24:27] [SUCCESS] User prompt configured successfully
+
+------------------------------------------------------------
+Step 5/5: Testing prompt functionality
+------------------------------------------------------------
+
+[2025-09-20 20:24:27] [INFO] Testing prompt functionality...
+[2025-09-20 20:24:27] [SUCCESS] Prompt functions load successfully
+[2025-09-20 20:24:27] [WARN] Git prompt function may have issues
+[2025-09-20 20:24:27] [SUCCESS] Prompt functionality test completed
+[2025-09-20 20:24:27] [SUCCESS] Color prompt setup completed successfully!
+
+============================================================
+Color Prompt Configuration Summary
+============================================================
+
+[2025-09-20 20:24:27] [INFO] Usage Instructions:
+[2025-09-20 20:24:27] [SUCCESS] Module prompt completed successfully
+[2025-09-20 20:24:31] [INFO] Executing module: git
+
+============================================================
+Git Configuration Setup
+============================================================
+
+
+------------------------------------------------------------
+Step 1/6: Validating git configuration
+------------------------------------------------------------
+
+[2025-09-20 20:24:31] [SUCCESS] Git config validated.
+
+------------------------------------------------------------
+Step 2/6: Verifying git installation
+------------------------------------------------------------
+
+[2025-09-20 20:24:31] [INFO] Verifying git installation...
+[2025-09-20 20:24:31] [INFO] Git version: git version 2.51.0
+[2025-09-20 20:24:31] [SUCCESS] Git installation verified
+
+------------------------------------------------------------
+Step 3/6: Configuring global git settings
+------------------------------------------------------------
+
+[2025-09-20 20:24:31] [INFO] Configuring global git settings for root user...
+[2025-09-20 20:24:31] [SUCCESS] Global git configuration completed
+
+------------------------------------------------------------
+Step 4/6: Configuring user git settings
+------------------------------------------------------------
+
+[2025-09-20 20:24:31] [INFO] Configuring user-specific git settings for root...
+[2025-09-20 20:24:32] [SUCCESS] User git configuration completed
+
+------------------------------------------------------------
+Step 5/6: Setting up git aliases
+------------------------------------------------------------
+
+[2025-09-20 20:24:32] [INFO] Setting up git aliases...
+[2025-09-20 20:24:32] [SUCCESS] Git aliases setup completed
+
+------------------------------------------------------------
+Step 6/6: Verifying git configuration
+------------------------------------------------------------
+
+[2025-09-20 20:24:32] [INFO] Verifying git configuration...
+[2025-09-20 20:24:32] [SUCCESS] User git name verified.
+[2025-09-20 20:24:33] [SUCCESS] User git email verified.
+[2025-09-20 20:24:33] [SUCCESS] Git configuration verification completed
+[2025-09-20 20:24:33] [SUCCESS] Git configuration completed successfully!
+[2025-09-20 20:24:33] [INFO] Displaying Git Info.
+[2025-09-20 20:24:33] [SUCCESS] Module git completed successfully
+[2025-09-20 20:24:56] [INFO] Current Configuration:

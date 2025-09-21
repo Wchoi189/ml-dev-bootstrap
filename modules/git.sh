@@ -28,51 +28,51 @@ run_git() {
 
     # Validate required user and home directory variables
     if [[ -z "${DEV_USERNAME:-}" ]]; then
-        DEV_USERNAME="${USERNAME:-dev-user}"
+        DEV_USERNAME="${USERNAME:-vscode-user}"
         log_debug "Set DEV_USERNAME to: $DEV_USERNAME"
     fi
     if [[ -z "${DEV_GROUP:-}" ]]; then
-        DEV_GROUP="${USER_GROUP:-dev}"
+        DEV_GROUP="${USER_GROUP:-vscode}"
         log_debug "Set DEV_GROUP to: $DEV_GROUP"
     fi
     if [[ -z "${DEV_HOME:-}" ]]; then
         DEV_HOME="/home/$DEV_USERNAME"
         log_debug "Set DEV_HOME to: $DEV_HOME"
     fi
-    
+
     local total_steps=6
     local current_step=0
-    
+
     # Step 1: Validate git configuration
     ((current_step++))
     log_step $current_step $total_steps "Validating git configuration"
     validate_git_config || return 1
-    
+
     # Step 2: Ensure git is installed
     ((current_step++))
     log_step $current_step $total_steps "Verifying git installation"
     verify_git_installation || return 1
-    
+
     # Step 3: Configure global git settings for root
     ((current_step++))
     log_step $current_step $total_steps "Configuring global git settings"
     configure_global_git || return 1
-    
+
     # Step 4: Configure user-specific git settings
     ((current_step++))
     log_step $current_step $total_steps "Configuring user git settings"
     configure_user_git || return 1
-    
+
     # Step 5: Set up git aliases
     ((current_step++))
     log_step $current_step $total_steps "Setting up git aliases"
     setup_git_aliases || return 1
-    
+
     # Step 6: Verify git configuration
     ((current_step++))
     log_step $current_step $total_steps "Verifying git configuration"
     verify_git_configuration || return 1
-    
+
     log_success "Git configuration completed successfully!"
     show_git_info
 }
@@ -101,7 +101,7 @@ configure_user_git() {
         log_error "Failed to set user git name"
         return 1
     }
-    
+
     run_git_as_user config --global user.email "'$GIT_USER_EMAIL'" || {
         log_error "Failed to set user git email"
         return 1
@@ -121,7 +121,7 @@ configure_user_git() {
 create_user_gitignore() {
     local gitignore_file="$DEV_HOME/.gitignore_global"
     log_debug "Creating global gitignore file: $gitignore_file"
-    
+
     # The 'cat > "$gitignore_file"' heredoc from your script goes here
     # ... (it's very long, so I'm omitting it for brevity, but it should be here)
     cat > "$gitignore_file" << 'EOF'
@@ -136,14 +136,14 @@ EOF
 
     chown "$DEV_USERNAME:$DEV_GROUP" "$gitignore_file"
     chmod 644 "$gitignore_file"
-    
+
     run_git_as_user config --global core.excludesfile "'$gitignore_file'"
     return 0
 }
 
 setup_git_aliases() {
     log_info "Setting up git aliases..."
-    
+
     # Set aliases for root
     for alias in "${!GIT_ALIASES[@]}"; do
         git config --global "alias.$alias" "'${GIT_ALIASES[$alias]}'"
@@ -183,7 +183,7 @@ verify_git_configuration() {
     if check_user_exists "$DEV_USERNAME"; then
         local user_name
         user_name=$(run_git_as_user config --global --get user.name 2>/dev/null)
-        
+
         if [[ "$user_name" != "$GIT_USER_NAME" ]]; then
             log_error "User git name mismatch: expected '$GIT_USER_NAME', got '$user_name'"
             return 1
@@ -192,7 +192,7 @@ verify_git_configuration() {
 
         local user_email
         user_email=$(run_git_as_user config --global --get user.email 2>/dev/null)
-        
+
         if [[ "$user_email" != "$GIT_USER_EMAIL" ]]; then
             log_error "User git email mismatch: expected '$GIT_USER_EMAIL', got '$user_email'"
             return 1

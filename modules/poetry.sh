@@ -28,7 +28,7 @@ install_poetry() {
     # system: shared under /opt with dev group permissions
     # user:   install for configured user (USERNAME) home
     local install_mode="${POETRY_INSTALL_MODE:-system}"
-    local dev_group="${USER_GROUP:-dev}"
+    local dev_group="${USER_GROUP:-vscode}"
     local dev_user="${USERNAME-}"
 
     # Ensure python3 is present
