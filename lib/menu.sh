@@ -336,7 +336,7 @@ show_menu() {
         menu_separator
         echo
         echo "        $(color_cyan "Quick Actions:")"
-        echo "        $(menu_option "a)" " Run all modules (skips envmgr by default)")"
+        echo "        $(menu_option "a)" " Run all modules (skips envmgr and SSH by default)")"
         echo "        $(menu_option "s)" " Configure APT sources")"
         echo "        $(menu_option "r)" " User management (create/switch)")"
         echo "        $(menu_option "e)" " Run environment manager(s) (multi-select)")"
@@ -361,11 +361,12 @@ show_menu() {
                 read -p ""
                 ;;
             a|A)
-                echo "        $(color_blue "Running all modules (skipping envmgr)...")"
+                echo "        $(color_blue "Running all modules (skipping envmgr and ssh)...")"
                 echo
-                # Run all except envmgr
+                # Run all except envmgr and ssh
                 for m in "${MODULE_ORDER[@]}"; do
                     [[ "$m" == "envmgr" ]] && continue
+                    [[ "$m" == "ssh" ]] && continue
                     execute_module "$m"
                 done
                 echo
@@ -386,7 +387,7 @@ show_menu() {
             e|E)
                 echo "        $(color_cyan "Select environment managers to install (comma-separated, e.g. 1,2):")"
                 echo
-                local env_opts=("conda" "micromamba" "pyenv" "poetry" "pipenv")
+                local env_opts=("conda" "micromamba" "pyenv" "poetry" "pipenv" "uv")
                 for idx in "${!env_opts[@]}"; do
                     printf "        $(color_green "%d)") $(color_white "%s")\n" $((idx+1)) "${env_opts[$idx]}"
                 done
@@ -399,7 +400,7 @@ show_menu() {
                 local pyenv_selected=false
                 for idx in "${env_indices[@]}"; do
                     idx_trimmed="$(echo $idx | xargs)"
-                    if [[ $idx_trimmed =~ ^[1-5]$ ]]; then
+                    if [[ $idx_trimmed =~ ^[1-6]$ ]]; then
                         local env_name="${env_opts[$((idx_trimmed-1))]}"
                         export SELECTED_ENVMGRS+="$env_name,"
                         if [[ "$env_name" == "pyenv" ]]; then

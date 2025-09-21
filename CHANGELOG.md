@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2025-09-21
+
+### Added
+
+- **UV Package Manager Integration**:
+  - Added UV as the new default Python package manager
+  - UV available as option 6 in environment manager multi-select menu
+  - Fast Python package installer and resolver with user-based installation
+  - Updated environment manager descriptions to reflect UV as default
+
+- **SSH Permissions Fix Menu Option**:
+  - Added "p) Fix SSH permissions" as quick action in interactive menu
+  - Direct access to SSH permission repair utility from main menu
+  - Comprehensive documentation with screenshots of the feature
+
+- **Enhanced Menu System**:
+  - Updated menu options overview table to include SSH permissions fix
+  - Expanded environment manager selection to 6 options (added UV)
+  - Updated validation logic to accept option 6 for environment managers
+
+- **Documentation Updates**:
+  - Updated README with UV integration details and SSH fix menu option
+  - Added screenshots for SSH permissions fix menu and execution
+  - Comprehensive environment manager descriptions including UV
+
+### Changed
+
+- **Default Environment Manager**: Changed from Pyenv to UV as the default package manager
+- **Menu Options**: Added SSH permissions fix to quick actions menu
+- **Environment Manager Selection**: Expanded from 5 to 6 options with UV addition
+- **Run All Modules Behavior**: SSH module now excluded from "Run All" operations due to complexity for general users
+
 ## [0.4.0] - 2025-09-16
 
 ### Added

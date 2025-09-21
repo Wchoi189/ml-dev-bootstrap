@@ -126,16 +126,34 @@ EOF
     log_info "[uv] Installing for user: $target_user ($target_home)"
 
     # If uv already available, skip
-    if sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'command -v uv >/dev/null 2>&1'; then
-        log_info "[uv] UV already installed for $target_user"
-        return 0
+    if [[ "$(id -un)" == "$target_user" ]]; then
+        # We're already the target user, check directly
+        if command -v uv >/dev/null 2>&1; then
+            log_info "[uv] UV already installed for $target_user"
+            return 0
+        fi
+    else
+        # Check as target user
+        if sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'command -v uv >/dev/null 2>&1'; then
+            log_info "[uv] UV already installed for $target_user"
+            return 0
+        fi
     fi
 
     # Install UV for the user
     log_info "[uv] Installing UV for $target_user..."
-    if ! sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'curl -LsSf https://astral.sh/uv/install.sh | sh'; then
-        log_error "[uv] Installation failed for $target_user"
-        return 1
+    if [[ "$(id -un)" == "$target_user" ]]; then
+        # We're already the target user, install directly
+        if ! curl -LsSf https://astral.sh/uv/install.sh | sh; then
+            log_error "[uv] Installation failed for $target_user"
+            return 1
+        fi
+    else
+        # Install as target user
+        if ! sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'curl -LsSf https://astral.sh/uv/install.sh | sh'; then
+            log_error "[uv] Installation failed for $target_user"
+            return 1
+        fi
     fi
 
     # Ensure user's local bin on PATH for interactive shells
@@ -158,9 +176,18 @@ EOF
     fi
 
     # Verify
-    if ! sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'uv --version >/dev/null'; then
-        log_error "[uv] Verification failed for $target_user"
-        return 1
+    if [[ "$(id -un)" == "$target_user" ]]; then
+        # We're already the target user, verify directly
+        if ! uv --version >/dev/null; then
+            log_error "[uv] Verification failed for $target_user"
+            return 1
+        fi
+    else
+        # Verify as target user
+        if ! sudo -H -u "$target_user" env HOME="$target_home" bash -lc 'uv --version >/dev/null'; then
+            log_error "[uv] Verification failed for $target_user"
+            return 1
+        fi
     fi
     log_success "[uv] Installed for $target_user"
     return 0

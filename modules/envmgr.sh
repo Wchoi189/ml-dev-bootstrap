@@ -66,6 +66,7 @@ run_envmgr() {
     if [[ -n "${SELECTED_ENVMGRS:-}" ]]; then
         IFS=',' read -ra selected <<< "${SELECTED_ENVMGRS,,}"
     else
+        [[ "${INSTALL_UV:-no}" == "yes" ]] && selected+=("uv")
         [[ "${INSTALL_CONDA:-no}" == "yes" ]] && selected+=("conda")
         [[ "${INSTALL_MICROMAMBA:-no}" == "yes" ]] && selected+=("micromamba")
         [[ "${INSTALL_PYENV:-no}" == "yes" ]] && selected+=("pyenv")
