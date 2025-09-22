@@ -18,6 +18,7 @@ declare -a ESSENTIAL_PACKAGES=(
     "unzip"
     "zip"
     "build-essential"
+    "python3-pip"
 )
 
 # Standard development tools (for "standard" and "full" profiles)

@@ -151,6 +151,8 @@ run_envmgr() {
             poetry)
                 if [[ -f "$MODULE_DIR/poetry.sh" ]]; then
                     source "$MODULE_DIR/poetry.sh"
+                    # If user explicitly selected poetry via menu or CLI, force-enable it
+                    export INSTALL_POETRY=yes
                     if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
                         log_debug "Starting poetry installation with verbose output enabled"
                     fi
@@ -173,6 +175,8 @@ run_envmgr() {
             pipenv)
                 if [[ -f "$MODULE_DIR/pipenv.sh" ]]; then
                     source "$MODULE_DIR/pipenv.sh"
+                    # If user explicitly selected pipenv via menu or CLI, force-enable it
+                    export INSTALL_PIPENV=yes
                     if [[ "${VERBOSE_OUTPUT:-false}" == "true" ]]; then
                         log_debug "Starting pipenv installation with verbose output enabled"
                     fi
@@ -228,7 +232,7 @@ run_envmgr() {
                 fi
                 ;;
             pipenv)
-                if command -v pipenv >/dev/null 2>&1; then
+                if command -v pipenv >/dev/null 2>&1 && pipenv --version >/dev/null 2>&1; then
                     echo -n "  - pipenv: "; pipenv --version
                 else
                     echo "  - pipenv: installed (version unknown)"

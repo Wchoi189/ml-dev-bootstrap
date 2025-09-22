@@ -51,6 +51,9 @@ declare -A DEBIAN_CODENAMES=(
     ["unstable"]="sid"
 )
 
+# Global mirrors array (will be populated by detect_distribution)
+declare -A MIRRORS
+
 # =============================================================================
 # Functions
 # =============================================================================
@@ -67,7 +70,10 @@ detect_distribution() {
                 DISTRO="ubuntu"
                 VERSION="$VERSION_ID"
                 CODENAME="${UBUNTU_CODENAMES[$VERSION]}"
-                MIRRORS=("${UBUNTU_MIRRORS[@]}")
+                MIRRORS=()
+                for key in "${!UBUNTU_MIRRORS[@]}"; do
+                    MIRRORS[$key]="${UBUNTU_MIRRORS[$key]}"
+                done
                 if [[ -z "$CODENAME" ]]; then
                     log_error "Unsupported Ubuntu version: $VERSION"
                     return 1
@@ -79,7 +85,10 @@ detect_distribution() {
                 DISTRO="debian"
                 VERSION="$VERSION_ID"
                 CODENAME="${DEBIAN_CODENAMES[$VERSION]}"
-                MIRRORS=("${DEBIAN_MIRRORS[@]}")
+                MIRRORS=()
+                for key in "${!DEBIAN_MIRRORS[@]}"; do
+                    MIRRORS[$key]="${DEBIAN_MIRRORS[$key]}"
+                done
                 if [[ -z "$CODENAME" ]]; then
                     log_error "Unsupported Debian version: $VERSION"
                     return 1
@@ -95,7 +104,10 @@ detect_distribution() {
                     DISTRO="ubuntu"
                     VERSION="$VERSION_ID"
                     CODENAME="${UBUNTU_CODENAMES[$VERSION]}"
-                    MIRRORS=("${UBUNTU_MIRRORS[@]}")
+                    MIRRORS=()
+                    for key in "${!UBUNTU_MIRRORS[@]}"; do
+                        MIRRORS[$key]="${UBUNTU_MIRRORS[$key]}"
+                    done
                     if [[ -z "$CODENAME" ]]; then
                         CODENAME="jammy"  # Default to a recent LTS
                     fi

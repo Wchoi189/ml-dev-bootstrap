@@ -1,240 +1,257 @@
-# Changelog
 
-All notable changes to this project will be documented in this file.
+# 변경 로그
+
+이 프로젝트의 모든 주요 변경사항이 이 파일에 문서화됩니다.
+
+## [0.5.1] - 2025-09-23
+
+### 수정됨
+
+- **APT 소스 선택**: 미러 이름=>URL 매핑을 보존하여 대화형으로 미러를 선택할 때 발생하는 "unbound variable" 충돌을 해결했습니다 (연관 배열 `MIRRORS` 사용 및 올바른 채우기).
+- **로깅 초기화**: `utils/logger.sh`가 소스된 후 `init_logging()`이 호출되도록 하여 구성된 `LOG_FILE`이 생성되고 로거 쓰기가 실패하지 않도록 했습니다.
+- **Pipenv 설치**: 대화형 pipenv 선택이 이제 구성 토글과 관계없이 강제로 설치를 진행합니다; 손상된 시스템 pipenv 실행 파일을 감지/제거하고 래퍼 스크립트에서 ModuleNotFoundError를 방지하기 위해 `python3 -m pip`를 통해 pipenv를 설치합니다.
+- **시스템 패키지**: 나중에 모듈 설치 중 `pip3`를 사용할 수 있도록 필수 패키지에 `python3-pip`를 추가했습니다.
+- **컬러 프롬프트 구성**: 프롬프트 모듈이 root로 실행될 때 개발 사용자(있는 경우)를 구성하는 것을 선호하고 사용자의 홈에 프롬프트 파일을 작성합니다 (소유권과 권한이 올바르게 설정됨).
+
+### 변경됨
+
+- 신뢰할 수 있는 시스템/사용자 pipenv 설치를 위해 `python3 -m pip`를 사용하고 활성화될 때 더 명확한 상세 출력을 제공합니다.
+- 프롬프트 설정이 이제 대상 사용자로서 프롬프트 기능을 검증하고 개발 사용자가 있을 때 root 전용 경로를 초기화하려고 시도하지 않습니다.
 
 ## [0.5.0] - 2025-09-21
 
-### Added
+### 추가됨
 
-- **UV Package Manager Integration**:
-  - Added UV as the new default Python package manager
-  - UV available as option 6 in environment manager multi-select menu
-  - Fast Python package installer and resolver with user-based installation
-  - Updated environment manager descriptions to reflect UV as default
+- **UV 패키지 매니저 통합**:
+  - UV를 새로운 기본 Python 패키지 매니저로 추가
+  - 환경 매니저 다중 선택 메뉴에서 옵션 6으로 UV 사용 가능
+  - 사용자 기반 설치를 지원하는 빠른 Python 패키지 설치 및 해결 도구
+  - UV를 기본값으로 반영하도록 환경 매니저 설명 업데이트
 
-- **SSH Permissions Fix Menu Option**:
-  - Added "p) Fix SSH permissions" as quick action in interactive menu
-  - Direct access to SSH permission repair utility from main menu
-  - Comprehensive documentation with screenshots of the feature
+- **SSH 권한 수정 메뉴 옵션**:
+  - 대화형 메뉴에서 빠른 작업으로 "p) SSH 권한 수정" 추가
+  - 메인 메뉴에서 SSH 권한 복구 유틸리티에 직접 액세스
+  - 기능의 스크린샷과 함께 포괄적인 문서화
 
-- **Enhanced Menu System**:
-  - Updated menu options overview table to include SSH permissions fix
-  - Expanded environment manager selection to 6 options (added UV)
-  - Updated validation logic to accept option 6 for environment managers
+- **향상된 메뉴 시스템**:
+  - SSH 권한 수정을 포함하도록 메뉴 옵션 개요 테이블 업데이트
+  - 환경 매니저 선택을 6개 옵션으로 확장 (UV 추가)
+  - 환경 매니저에 대한 옵션 6을 허용하도록 검증 로직 업데이트
 
-- **Documentation Updates**:
-  - Updated README with UV integration details and SSH fix menu option
-  - Added screenshots for SSH permissions fix menu and execution
-  - Comprehensive environment manager descriptions including UV
+- **문서 업데이트**:
+  - UV 통합 세부사항과 SSH 수정 메뉴 옵션으로 README 업데이트
+  - SSH 권한 수정 메뉴 및 실행에 대한 스크린샷 추가
+  - UV를 포함한 포괄적인 환경 매니저 설명
 
-### Changed
+### 변경됨
 
-- **Default Environment Manager**: Changed from Pyenv to UV as the default package manager
-- **Menu Options**: Added SSH permissions fix to quick actions menu
-- **Environment Manager Selection**: Expanded from 5 to 6 options with UV addition
-- **Run All Modules Behavior**: SSH module now excluded from "Run All" operations due to complexity for general users
+- **기본 환경 매니저**: Pyenv에서 UV로 기본 패키지 매니저 변경
+- **메뉴 옵션**: 빠른 작업 메뉴에 SSH 권한 수정 추가
+- **환경 매니저 선택**: UV 추가로 5개에서 6개 옵션으로 확장
+- **모든 모듈 실행 동작**: 일반 사용자에게는 복잡하므로 SSH 모듈이 이제 "모두 실행" 작업에서 제외됨
 
 ## [0.4.0] - 2025-09-16
 
-### Added
+### 추가됨
 
-- **Major Codebase Refactoring**:
-  - Reduced main `setup.sh` from 1107 to 377 lines (66% reduction)
-  - Extracted modular components: `lib/menu.sh`, `lib/args.sh`, `lib/orchestrator.sh`, `modules/diagnostics.sh`
-  - Improved maintainability and code organization
+- **주요 코드베이스 리팩토링**:
+  - 메인 `setup.sh`를 1107줄에서 377줄로 축소 (66% 감소)
+  - 모듈형 컴포넌트 추출: `lib/menu.sh`, `lib/args.sh`, `lib/orchestrator.sh`, `modules/diagnostics.sh`
+  - 유지보수성과 코드 구성 개선
 
-- **Enhanced Environment Manager Module**:
-  - Added installation context detection (root vs user execution)
-  - Context-aware behavior for system-wide vs user installations
-  - Updated description to clearly indicate "Pyenv default" installation
-  - Added `ENVMGR_CONTEXT_MODE` configuration option (auto/root-only/user-only/always)
+- **향상된 환경 매니저 모듈**:
+  - 설치 컨텍스트 감지 추가 (root vs 사용자 실행)
+  - 시스템 전체 vs 사용자 설치에 대한 컨텍스트 인식 동작
+  - "Pyenv 기본" 설치를 명확히 나타내도록 설명 업데이트
+  - `ENVMGR_CONTEXT_MODE` 구성 옵션 추가 (auto/root-only/user-only/always)
 
-- **Interactive Locale Selection**:
-  - Added Korean/English locale choice during setup
-  - `INTERACTIVE_LOCALE_SELECTION` configuration option
-  - Improved user experience for multilingual environments
+- **대화형 로케일 선택**:
+  - 설정 중 한국어/영어 로케일 선택 추가
+  - `INTERACTIVE_LOCALE_SELECTION` 구성 옵션
+  - 다국어 환경에 대한 사용자 경험 개선
 
-- **Comprehensive User Management System**:
-  - Combined `r) Create user` and `u) Switch user` into single workflow
-  - Interactive user creation with username and password prompts
-  - Smart user detection (filters system users, shows UID ≥ 1000)
-  - Automatic switching to newly created users
-  - Enhanced submenu with create/switch options
+- **포괄적인 사용자 관리 시스템**:
+  - `r) 사용자 생성`과 `u) 사용자 전환`을 단일 워크플로우로 결합
+  - 사용자명과 비밀번호 프롬프트를 통한 대화형 사용자 생성
+  - 스마트 사용자 감지 (시스템 사용자 필터링, UID ≥ 1000 표시)
+  - 새로 생성된 사용자로 자동 전환
+  - 생성/전환 옵션이 있는 향상된 하위 메뉴
 
-- **Menu System Improvements**:
-  - Moved `sources` module from main flow to quick action `s)`
-  - Updated module numbering and menu structure
-  - Better visual organization and user guidance
+- **메뉴 시스템 개선**:
+  - `sources` 모듈을 메인 플로우에서 빠른 작업 `s)`로 이동
+  - 모듈 번호 매기기 및 메뉴 구조 업데이트
+  - 더 나은 시각적 구성과 사용자 안내
 
-- **System Enhancements**:
-  - Added `build-essential` to essential packages (always installed)
-  - Improved root user prompt configuration support
-  - Enhanced configuration options for all new features
+- **시스템 향상**:
+  - 필수 패키지에 `build-essential` 추가 (항상 설치됨)
+  - root 사용자 프롬프트 구성 지원 개선
+  - 모든 새 기능에 대한 향상된 구성 옵션
 
-### Changed
+### 변경됨
 
-- **Menu Structure**:
-  - Removed separate user creation/switching options
-  - Consolidated into comprehensive user management workflow
-  - Updated quick actions layout and descriptions
+- **메뉴 구조**:
+  - 별도의 사용자 생성/전환 옵션 제거
+  - 포괄적인 사용자 관리 워크플로우로 통합
+  - 빠른 작업 레이아웃 및 설명 업데이트
 
-- **Module Order**:
-  - Removed `sources` from main `MODULE_ORDER` array
-  - Updated module numbering in interactive menu
+- **모듈 순서**:
+  - 메인 `MODULE_ORDER` 배열에서 `sources` 제거
+  - 대화형 메뉴에서 모듈 번호 매기기 업데이트
 
-- **Configuration System**:
-  - Added new configuration options for enhanced features
-  - Improved configuration documentation and examples
-  - Better environment variable support
+- **구성 시스템**:
+  - 향상된 기능을 위한 새로운 구성 옵션 추가
+  - 구성 문서화 및 예제 개선
+  - 더 나은 환경 변수 지원
 
-### Fixed
+### 수정됨
 
-- **Prompt Configuration**:
-  - Fixed prompt setup for root user execution context
-  - Improved compatibility across different user environments
+- **프롬프트 구성**:
+  - root 사용자 실행 컨텍스트에 대한 프롬프트 설정 수정
+  - 다양한 사용자 환경에서 호환성 개선
 
-- **User Management**:
-  - Resolved issues with user creation and switching workflow
-  - Better error handling for user-related operations
 
-### Enhanced
+- **사용자 관리**:
+  - 사용자 생성 및 전환 워크플로우 문제 해결
+  - 사용자 관련 작업에 대한 더 나은 오류 처리
 
-- **User Experience**:
-  - More intuitive menu navigation and options
-  - Better feedback and status messages
-  - Streamlined workflows for common operations
+### 향상됨
 
-- **Documentation**:
-  - Updated README with new features and configuration options
-  - Improved usage examples and menu descriptions
-  - Added comprehensive changelog entries
+- **사용자 경험**:
+  - 더 직관적인 메뉴 탐색 및 옵션
+  - 더 나은 피드백 및 상태 메시지
+  - 일반적인 작업에 대한 간소화된 워크플로우
+
+- **문서화**:
+  - 새로운 기능 및 구성 옵션으로 README 업데이트
+  - 사용 예제 및 메뉴 설명 개선
+  - 포괄적인 변경 로그 항목 추가
 
 ## [0.3.0] - 2025-09-08
 
-### Added
+### 추가됨
 
-- **APT Sources Management Module** (`sources`):
-  - Interactive mirror selection from popular regional mirrors (Kakao, Naver, Daum, Ubuntu official, AWS regions)
-  - Automatic Ubuntu version detection (supports 20.04 through 24.04)
-  - Backup creation before making changes
-  - Non-interactive mode for automated setups
+- **APT 소스 관리 모듈** (`sources`):
+  - 인기 있는 지역 미러에서 대화형 미러 선택 (Kakao, Naver, Daum, Ubuntu 공식, AWS 지역)
+  - 자동 Ubuntu 버전 감지 (20.04부터 24.04까지 지원)
+  - 변경 전 백업 생성
+  - 자동화된 설정을 위한 비대화형 모드
 
-- **Enhanced User Management & Permissions**:
-  - `/opt`-based setup directory with optimal permissions (`/opt/ml-dev-bootstrap`)
-  - Multiple access points: `~/setup` (user symlink), `/root/ml-dev-bootstrap` (compatibility symlink)
-  - Smart permission delegation with setgid bit for consistent group ownership
-  - Seamless user switching with `--switch-user` option and menu integration
+- **향상된 사용자 관리 및 권한**:
+  - 최적의 권한을 가진 `/opt` 기반 설정 디렉토리 (`/opt/ml-dev-bootstrap`)
+  - 다중 액세스 포인트: `~/setup` (사용자 심볼릭 링크), `/root/ml-dev-bootstrap` (호환성 심볼릭 링크)
+  - 일관된 그룹 소유권을 위한 setgid 비트를 사용한 스마트 권한 위임
+  - `--switch-user` 옵션 및 메뉴 통합을 통한 원활한 사용자 전환
 
-- **Flexible Root Requirements**:
-  - Smart detection of when root privileges are required vs optional
-  - `ALLOW_NON_ROOT=true` support for user-specific operations
-  - Clear messaging about permission requirements
+- **유연한 Root 요구사항**:
+  - root 권한이 필요한 경우와 선택적인 경우의 스마트 감지
+  - 사용자별 작업을 위한 `ALLOW_NON_ROOT=true` 지원
+  - 권한 요구사항에 대한 명확한 메시지
 
-- **User Switching Features**:
-  - `--switch-user` command-line option with clear guidance
-  - `u) Switch to development user` menu option
-  - Multiple access path information for different user contexts
+- **사용자 전환 기능**:
+  - 명확한 안내가 있는 `--switch-user` 명령줄 옵션
+  - `u) 개발 사용자로 전환` 메뉴 옵션
+  - 다양한 사용자 컨텍스트에 대한 다중 액세스 경로 정보
 
-- **Enhanced Logging & Error Handling**:
-  - Improved log file permission handling for multi-user scenarios
-  - Better error messages and user guidance
+- **향상된 로깅 및 오류 처리**:
+  - 다중 사용자 시나리오를 위한 로그 파일 권한 처리 개선
+  - 더 나은 오류 메시지 및 사용자 안내
 
-- **Colorful Interactive Menu**:
-  - Added ANSI color support for better visual appeal and readability
-  - Color-coded menu options with distinct colors for different sections
-  - Enhanced user experience with colored status indicators and prompts
-  - Improved visual hierarchy with colored headers and separators
+- **컬러풀한 대화형 메뉴**:
+  - 더 나은 시각적 매력과 가독성을 위한 ANSI 컬러 지원 추가
+  - 다양한 섹션에 대한 고유한 색상을 가진 색상 코딩된 메뉴 옵션
+  - 컬러 상태 표시기 및 프롬프트로 향상된 사용자 경험
+  - 컬러 헤더 및 구분자로 개선된 시각적 계층 구조
 
-### Changed
+### 변경됨
 
-- **File Location Strategy**:
-  - Moved main setup files to `/opt/ml-dev-bootstrap` for better accessibility
-  - Created symlinks for backward compatibility and user convenience
-  - Improved permission model with dev group ownership
+- **파일 위치 전략**:
+  - 더 나은 접근성을 위해 메인 설정 파일을 `/opt/ml-dev-bootstrap`으로 이동
+  - 하위 호환성 및 사용자 편의를 위한 심볼릭 링크 생성
+  - dev 그룹 소유권을 가진 개선된 권한 모델
 
-- **User Module Enhancements**:
-  - `configure_setup_directory_permissions()` now handles `/opt` location optimally
-  - Automatic symlink creation for user access points
-  - Enhanced permission configuration with setgid support
+- **사용자 모듈 향상**:
+  - `configure_setup_directory_permissions()`가 이제 `/opt` 위치를 최적으로 처리
+  - 사용자 액세스 포인트를 위한 자동 심볼릭 링크 생성
+  - setgid 지원을 통한 향상된 권한 구성
 
-- **Common Utilities**:
-  - `check_requirements()` now intelligently determines root requirements
-  - Better support for user-specific operations without root
+- **공통 유틸리티**:
+  - `check_requirements()`가 이제 root 요구사항을 지능적으로 결정
+  - root 없이 사용자별 작업에 대한 더 나은 지원
 
-### Fixed
+### 수정됨
 
-- **Permission Issues**:
-  - Resolved `/root` directory traversal issues for development users
-  - Fixed log file permission conflicts between root and user contexts
-  - Eliminated permission denied errors when switching users
+- **권한 문제**:
+  - 개발 사용자를 위한 `/root` 디렉토리 순회 문제 해결
+  - root와 사용자 컨텍스트 간의 로그 파일 권한 충돌 수정
+  - 사용자 전환 시 권한 거부 오류 제거
 
-- **User Switching Problems**:
-  - Manual `su dev-user` now works correctly with proper path access
-  - Environment manager installations work in user context
-  - No more permission conflicts between root and user operations
+- **사용자 전환 문제**:
+  - 수동 `su vscode`가 이제 적절한 경로 액세스로 올바르게 작동
+  - 환경 매니저 설치가 사용자 컨텍스트에서 작동
+  - root와 사용자 작업 간의 권한 충돌 없음
 
-### Security
 
-- **Permission Hardening**:
-  - Proper group-based access control with setgid directories
-  - Secure multi-user file permissions (775 for dirs, 664 for files)
-  - Maintained root ownership while allowing dev group access
+### 보안
+
+- **권한 강화**:
+  - setgid 디렉토리를 사용한 적절한 그룹 기반 액세스 제어
+  - 안전한 다중 사용자 파일 권한 (디렉토리는 775, 파일은 664)
+  - dev 그룹 액세스를 허용하면서 root 소유권 유지
 
 ## [0.2.1] - 2025-08-24
 
-### Added
+### 추가됨
 
-- Environment Manager (envmgr):
-    - System-wide Poetry install to `/opt/pypoetry` with dev-group permissions and global shim at `/usr/local/bin/poetry`.
-    - Fallback Poetry installation using a dedicated venv when the official installer fails.
-    - Global PATH profile `/etc/profile.d/ml-dev-tools.sh` to ensure `/usr/local/bin`, `/opt/pypoetry/bin`, and `$HOME/.local/bin` are available across shells.
+- 환경 매니저 (envmgr):
+    - dev-그룹 권한과 `/usr/local/bin/poetry`의 전역 shim을 사용하여 `/opt/pypoetry`에 시스템 전체 Poetry 설치.
+    - 공식 설치 프로그램이 실패할 때 전용 venv를 사용한 대체 Poetry 설치.
+    - 셸 전반에 걸쳐 `/usr/local/bin`, `/opt/pypoetry/bin`, `$HOME/.local/bin`을 사용할 수 있도록 하는 전역 PATH 프로필 `/etc/profile.d/ml-dev-tools.sh`.
 
-### Changed
+### 변경됨
 
-- Hardened config sourcing across modules using BASH_SOURCE to resolve `config/defaults.conf` reliably.
-- Pyenv and Pipenv modules now enforce dev-group permissions and create global shims when running as root.
+- BASH_SOURCE를 사용하여 `config/defaults.conf`를 안정적으로 해결하는 모듈 전반의 강화된 구성 소싱.
+- Pyenv 및 Pipenv 모듈이 이제 dev-그룹 권한을 강제하고 root로 실행될 때 전역 shim을 생성합니다.
 
-### Fixed
+### 수정됨
 
-- Resolved permission holes causing installs to be root-only and inaccessible to other users.
-- Fixed path bugs where modules sourced `../config/defaults.conf` incorrectly when executed from different locations.
+- 설치가 root 전용이 되어 다른 사용자가 액세스할 수 없게 만드는 권한 구멍 해결.
+- 다른 위치에서 실행될 때 모듈이 `../config/defaults.conf`를 잘못 소싱하는 경로 버그 수정.
 
 ## [0.2.0] - 2025-07-30
 
-### Added
+### 추가됨
 
-- **Maintenance & Troubleshooting Tools**:
-    - Implemented a `--diagnose` flag to run comprehensive checks on the environment.
-    - Added an `--update` flag to update system packages and conda environments.
-    - Added a `--backup` flag to create a backup of important configuration files.
-- **Profile-based Installation**:
-    - Introduced a `GLOBAL_INSTALL_PROFILE` setting in `config/defaults.conf` to choose between `minimal`, `standard`, and `full` setups.
-- **User Experience**:
-    - Added a `--progress` flag to display a progress bar during a full (`--all`) installation.
+- **유지보수 및 문제 해결 도구**:
+    - 환경에 대한 포괄적인 검사를 실행하는 `--diagnose` 플래그 구현.
+    - 시스템 패키지 및 conda 환경을 업데이트하는 `--update` 플래그 추가.
+    - 중요한 구성 파일의 백업을 생성하는 `--backup` 플래그 추가.
+- **프로필 기반 설치**:
+    - `config/defaults.conf`에서 `minimal`, `standard`, `full` 설정 중에서 선택할 수 있는 `GLOBAL_INSTALL_PROFILE` 설정 도입.
+- **사용자 경험**:
+    - 전체(`--all`) 설치 중 진행률 표시줄을 표시하는 `--progress` 플래그 추가.
 
-### Changed
+### 변경됨
 
-- **Environment Management**:
-    - Replaced the Conda installation with **Micromamba** for significantly faster and more reliable environment creation.
-    - The `conda` module now creates a dedicated named environment instead of installing packages into the `base` environment.
-- **Efficiency**:
-    - Optimized the permission-setting logic for conda environments to avoid long delays on systems with slow disk I/O.
-- **Robustness**:
-    - Hardened the `locale` and `user` modules to prevent common configuration issues and to provide better diagnostics.
-
-## [0.1.0-beta] - 2025-07-26
-
-### Added
-
-- Initial release of the modular bootstrap utility.
-- Modules for system, locale, user, conda, prompt, and git setup.
-- Features including interactive menu, dry-run mode, and diagnostics.
+- **환경 관리**:
+    - Conda 설치를 훨씬 빠르고 안정적인 환경 생성을 위해 **Micromamba**로 교체.
+    - `conda` 모듈이 이제 `base` 환경에 패키지를 설치하는 대신 전용 명명된 환경을 생성합니다.
+- **효율성**:
+    - 느린 디스크 I/O를 가진 시스템에서 긴 지연을 피하기 위해 conda 환경에 대한 권한 설정 로직 최적화.
+- **견고성**:
+    - 일반적인 구성 문제를 방지하고 더 나은 진단을 제공하기 위해 `locale` 및 `user` 모듈 강화.
 
 ## [0.1.0-beta] - 2025-07-26
 
-### Added
+### 추가됨
 
--   Initial release of the modular bootstrap utility.
--   Modules for system, locale, user, conda, prompt, and git setup.
--   Features including interactive menu, dry-run mode, and diagnostics.
+- 모듈형 부트스트랩 유틸리티의 초기 릴리스.
+- 시스템, 로케일, 사용자, conda, 프롬프트, git 설정을 위한 모듈.
+- 대화형 메뉴, 드라이런 모드, 진단을 포함한 기능.
 
+## [0.1.0-beta] - 2025-07-26
+
+### 추가됨
+
+- 모듈형 부트스트랩 유틸리티의 초기 릴리스.
+- 시스템, 로케일, 사용자, conda, 프롬프트, git 설정을 위한 모듈.
+- 대화형 메뉴, 드라이런 모드, 진단을 포함한 기능.

@@ -281,6 +281,7 @@ fi
 
 if [[ -f "$UTILS_DIR/logger.sh" ]]; then
     source "$UTILS_DIR/logger.sh"
+    init_logging
 fi
 
 # Load menu module

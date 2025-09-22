@@ -54,14 +54,28 @@ run_prompt() {
     # Determine target user and home directory
     local target_user target_home
     if [[ $EUID -eq 0 ]]; then
-        # Running as root - configure for root user
-        target_user="root"
-        target_home="/root"
-        log_info "Configuring prompt for root user"
+        # Running as root - prefer to configure prompt for the development user
+        # if that user exists (USERNAME or DEV_USERNAME). Fallback to root.
+        local candidate_user
+        candidate_user="${DEV_USERNAME:-${USERNAME:-}}"
+        if [[ -n "$candidate_user" ]] && id "$candidate_user" >/dev/null 2>&1; then
+            target_user="$candidate_user"
+            # Resolve home directory robustly
+            target_home="$(eval echo ~${target_user})"
+            log_info "Running as root: configuring prompt for development user: $target_user"
+        elif [[ -n "${USERNAME:-}" ]] && id "$USERNAME" >/dev/null 2>&1; then
+            target_user="$USERNAME"
+            target_home="$(eval echo ~${target_user})"
+            log_info "Running as root: configuring prompt for development user: $target_user"
+        else
+            target_user="root"
+            target_home="/root"
+            log_info "Configuring prompt for root user"
+        fi
     else
-        # Running as regular user - configure for dev-user
-        target_user="${DEV_USERNAME:-${USERNAME:-vscode-user}}"
-        target_home="/home/$target_user"
+        # Running as regular user - configure for the invoking user (or configured dev user)
+        target_user="${DEV_USERNAME:-${USERNAME:-$(id -un)}}"
+        target_home="$(eval echo ~${target_user})"
         log_info "Configuring prompt for user: $target_user"
     fi
 
@@ -751,16 +765,16 @@ demo_prompt_styles() {
     echo ""
 
     echo "1. Simple style:"
-    echo "   dev-user@container:/home/dev-user$ "
+    echo "   vscode@container:/home/vscode$ "
     echo ""
 
     echo "2. Modern style:"
-    echo "   dev-user@container:/home/dev-user (main*) (myenv)"
+    echo "   vscode@container:/home/vscode (main*) (myenv)"
     echo "   $ "
     echo ""
 
     echo "3. Powerline style:"
-    echo "   dev-user@container  ~/project  main*  myenv "
+    echo "   vscode@container  ~/project  main*  myenv "
     echo "   $ "
     echo ""
 
