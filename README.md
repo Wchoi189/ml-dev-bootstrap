@@ -43,7 +43,7 @@ ml-dev-bootstrap/
 
 ## 개요
 
-ML Dev Bootstrap은 새로운 리눅스 기반 도커 개발환경 설정할 때 해야 하는 시스템 소프트웨 업데이트, 지역에 적합한 소스 리스트 설정, 개발환경 라이버리, 새로운 사용자 생성와 전환, 칼라 쉘 프롬트, 깃허브 설정, 파이썬, 패키지 매니저와 심지어 SSH 설정까지 이 복잡하고 오래 걸리고 번거로운 작업을 손 쉽게 할 수 있도록 합니다. 
+ML Dev Bootstrap은 새로운 리눅스 기반 도커 개발환경 설정할 때 해야 하는 시스템 소프트웨 업데이트, 지역에 적합한 소스 리스트 설정, 개발환경 라이버리, 새로운 사용자 생성와 전환, 칼라 쉘 프롬트, 깃허브 설정, 파이썬, 패키지 매니저와 심지어 SSH 설정까지 이 복잡하고 오래 걸리고 번거로운 작업을 손 쉽게 할 수 있도록 합니다.
 
 
 
@@ -60,7 +60,7 @@ ML Dev Bootstrap은 새로운 리눅스 기반 도커 개발환경 설정할 때
 - **그룹 기반 권한**: `dev` 그룹 멤버십을 통한 액세스 관리
 
 ### 🛠️ **개발 도구**
-- **Python 환경 관리자**: UV(기본값), Poetry, Pyenv, Pipenv, Conda, Micromamba
+- **Python 환경 관리자**: UV 및 Pyenv(기본값), Poetry, Pipenv, Conda, Micromamba
 - **패키지 관리**: 지역 미러를 사용한 APT 소스 구성
 - **셸 향상**: 컬러 프롬프트 및 PATH 관리
 
@@ -84,7 +84,7 @@ ML Dev Bootstrap은 새로운 리눅스 기반 도커 개발환경 설정할 때
 | `a` | 모든 모듈 실행 | 기본적으로 `envmgr`와 `SSH` 건너뜀 |
 | `s` | APT 소스 구성 | 메인 플로우에서 분리 |
 | `r` | 사용자 관리 | **새로운 통합 워크플로** |
-| `e` | 환경 관리자 | **UV 기본값, 컨텍스트 인식** |
+| `e` | 환경 관리자 | **UV 및 Pyenv 기본값, 컨텍스트 인식** |
 | `p` | SSH 권한 수정 | **빠른 권한 복구** |
 | `c` | 구성 표시 | 향상된 디스플레이 |
 | `q` | 종료 | - |
@@ -145,7 +145,7 @@ sudo ./setup.sh --menu
 
 환경 관리자 모듈은 여러 Python 패키지 및 환경 관리 도구를 지원합니다:
 
-### UV (기본값)
+### UV 및 Pyenv (기본값)
 - 빠른 Python 패키지 설치 프로그램 및 해결사
 - dev-group 권한으로 대상 사용자별 설치
 - `/usr/local/bin/uv`를 통한 전역 액세스
@@ -192,11 +192,9 @@ sudo -E ./setup.sh git
 ### 환경 관리자 구성
 
 ```bash
-# UV (기본 환경 관리자)
+# UV 및 Pyenv (기본 환경 관리자)
 INSTALL_UV=yes
-
-# Pyenv (대체 환경 관리자)
-INSTALL_PYENV=no
+INSTALL_PYENV=yes
 PYENV_PYTHON_VERSION="3.10.18"  # 또는 PYENV_PYTHON_VERSIONS로 쉼표 구분
 
 # Poetry
@@ -301,7 +299,7 @@ sudo -E ./setup.sh --all
 
 ![환경 관리자 선택 프롬프트](docs/screenshots/envmgr-select.png)
 
-*옵션 e: UV를 기본 옵션으로 하여 설치할 Python 환경 관리자를 선택합니다.*
+*옵션 e: UV 및 Pyenv를 기본 옵션으로 하여 설치할 Python 환경 관리자를 선택합니다.*
 
 ---
 

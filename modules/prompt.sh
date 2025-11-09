@@ -137,7 +137,7 @@ validate_prompt_config() {
     log_info "Validating prompt configuration..."
 
     # Validate prompt style
-    local valid_styles=("simple" "modern" "powerline" "minimal")
+    local valid_styles=("simple" "modern" "powerline" "minimal" "ultra-concise")
     local style_valid=false
 
     for style in "${valid_styles[@]}"; do
@@ -419,6 +419,44 @@ __prompt_minimal() {
     PS1+="\[${PROMPT_COLORS[RESET]}\] \$ "
 }
 
+# Helper function to get short directory name (12 chars max, no ...)
+__short_dir_ultra() {
+    local dir="${PWD##*/}"
+    if [ ${#dir} -gt 15 ]; then
+        echo "${dir:0:12}"
+    else
+        echo "$dir"
+    fi
+}
+
+# Helper function to get short git branch name (last 8 letters)
+__short_git_branch_ultra() {
+    local branch
+    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [ -n "$branch" ]; then
+        if [ ${#branch} -gt 8 ]; then
+            # Show last 8 letters of branch name
+            echo "${branch: -8}"
+        else
+            echo "$branch"
+        fi
+    fi
+}
+
+# Ultra-concise prompt style - directory (12 chars max) and last 8 letters of git branch
+__prompt_ultra_concise() {
+    # Get directory and branch info
+    local dir_info=$(__short_dir_ultra)
+    local git_info=$(__short_git_branch_ultra)
+
+    # Build prompt: directory:branch❯ or directory❯
+    if [ -n "$git_info" ]; then
+        PS1="\[${PROMPT_COLORS[GREEN]}\]${dir_info}\[${PROMPT_COLORS[RESET]}\]\[${PROMPT_COLORS[GREEN]}\]:${git_info}\[${PROMPT_COLORS[RESET]}\]\[${PROMPT_COLORS[GREEN]}\]❯\[${PROMPT_COLORS[RESET]}\] "
+    else
+        PS1="\[${PROMPT_COLORS[GREEN]}\]${dir_info}\[${PROMPT_COLORS[RESET]}\]\[${PROMPT_COLORS[GREEN]}\]❯\[${PROMPT_COLORS[RESET]}\] "
+    fi
+}
+
 # Set prompt based on style
 __set_prompt() {
     case "${PROMPT_STYLE:-modern}" in
@@ -430,6 +468,9 @@ __set_prompt() {
             ;;
         "minimal")
             __prompt_minimal
+            ;;
+        "ultra-concise")
+            __prompt_ultra_concise
             ;;
         *)
             __prompt_modern
@@ -449,7 +490,8 @@ __init_prompt() {
 # Export functions
 export -f __git_ps1 __conda_ps1 __python_ps1 __node_ps1
 export -f __exit_status_ps1 __load_ps1 __time_ps1 __short_pwd
-export -f __prompt_simple __prompt_modern __prompt_powerline __prompt_minimal
+export -f __short_dir_ultra __short_git_branch_ultra
+export -f __prompt_simple __prompt_modern __prompt_powerline __prompt_minimal __prompt_ultra_concise
 export -f __set_prompt __init_prompt
 EOF
 
@@ -546,7 +588,7 @@ create_prompt_config() {
 # Bash Prompt Configuration
 # This file allows you to customize your shell prompt
 
-# Prompt style: simple, modern, powerline, minimal
+# Prompt style: simple, modern, powerline, minimal, ultra-concise
 PROMPT_STYLE="${PROMPT_STYLE}"
 
 # Show git branch and status
@@ -679,10 +721,11 @@ show_prompt_info() {
     if [[ "${DRY_RUN:-false}" != "true" ]]; then
         echo ""
         echo "Available Prompt Styles:"
-        echo "  • simple    - Basic username@hostname:path$ prompt"
-        echo "  • modern    - Colorful multi-line prompt with git/conda info"
-        echo "  • powerline - Powerline-style prompt with segments"
-        echo "  • minimal   - Clean minimal prompt with git info"
+        echo "  • simple         - Basic username@hostname:path$ prompt"
+        echo "  • modern         - Colorful multi-line prompt with git/conda info"
+        echo "  • powerline      - Powerline-style prompt with segments"
+        echo "  • minimal        - Clean minimal prompt with git info"
+        echo "  • ultra-concise  - Ultra concise: just directory name and prompt"
 
         echo ""
         echo "Prompt Features:"
@@ -722,7 +765,7 @@ change_prompt_style() {
     fi
 
     # Validate style
-    local valid_styles=("simple" "modern" "powerline" "minimal")
+    local valid_styles=("simple" "modern" "powerline" "minimal" "ultra-concise")
     local style_valid=false
 
     for style in "${valid_styles[@]}"; do
