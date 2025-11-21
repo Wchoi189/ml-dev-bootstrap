@@ -159,3 +159,5 @@ setup-utility.log
 *.bak
 *.backup
 *.conf
+# Ignore any local per-user config files in config/
+config/*.conf
