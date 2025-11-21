@@ -14,7 +14,7 @@ MODULES_DIR="$SCRIPT_DIR/modules"
 UTILS_DIR="$SCRIPT_DIR/utils"
 
 # Configuration
-CONFIG_FILE="$CONFIG_DIR/defaults.config"
+CONFIG_FILE="$CONFIG_DIR/defaults.conf"
 [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
 
 # Default values (can be overridden by config file)
