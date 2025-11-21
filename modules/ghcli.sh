@@ -85,18 +85,135 @@ ghcli_install_package() {
     fi
 
     log_info "Installing GitHub CLI package"
+
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_info "[DRY RUN] Would install GitHub CLI package and verify commands"
+        return 0
+    fi
     if ! install_packages "gh"; then
         log_error "Failed to install GitHub CLI package"
         return 1
     fi
 
-    # Verify installation
+    # Give the shell a chance to pick up newly installed binaries
+    log_debug "Refreshing shell command cache (hash -r)"
+    hash -r 2>/dev/null || true
+
+    # Verify installation; if gh is missing, try diagnostics + safe fallbacks
     if ! check_command "gh"; then
-        log_error "GitHub CLI package installed but command not found in PATH"
-        return 1
+        log_warn "gh command not found after apt install — running diagnostics and attempting corrective actions"
+
+        # Try a safe reinstall first
+        log_info "Attempting apt reinstall of 'gh'"
+        apt-get update >/dev/null 2>&1 || true
+        apt-get install --reinstall -y gh >/dev/null 2>&1 || true
+
+        # Refresh command cache again and ensure common bin directories are in PATH
+        hash -r 2>/dev/null || true
+        PATH_ADD="/usr/local/bin:/usr/bin:/bin"
+        for p in ${PATH_ADD//:/ }; do
+            case ":$PATH:" in
+                *":$p:"*) ;;
+                *) PATH="$p:$PATH" ;;
+            esac
+        done
+
+        # Check if the package contains the binary on disk
+        if dpkg -L gh >/dev/null 2>&1; then
+            if dpkg -L gh | grep -E '/usr/bin/gh|/bin/gh' >/dev/null 2>&1; then
+                log_info "Found gh binary in package files — refreshed PATH and hash"
+                hash -r 2>/dev/null || true
+            else
+                log_debug "Package 'gh' installed but binary not found in known locations"
+            fi
+        else
+            log_debug "Package 'gh' not listed by dpkg; it may not be available from apt in this environment"
+        fi
+
+        # If still no command found, attempt to download official .deb as fallback
+        if ! check_command "gh"; then
+            log_warn "gh still not found — attempting fallback .deb installation from GitHub releases"
+            if ghcli_fallback_deb_install; then
+                hash -r 2>/dev/null || true
+            fi
+        fi
+
+        # Final verification
+        if ! check_command "gh"; then
+            log_error "GitHub CLI package installed but command not found in PATH"
+            # Attempt extra diagnostics for the user
+            if [[ -x "/usr/bin/gh" || -x "/bin/gh" || -x "/usr/local/bin/gh" ]]; then
+                ls -l /usr/local/bin/gh /usr/bin/gh /bin/gh 2>/dev/null || true
+                log_error "A gh binary exists on disk but isn't resolving on PATH — check environment or the shell login/profile"
+            else
+                log_error "No gh binary found on disk after both apt and fallback attempts"
+            fi
+            return 1
+        fi
+
     fi
 
     log_info "GitHub CLI installed successfully: $(gh --version | head -n1)"
+}
+
+
+ghcli_fallback_deb_install() {
+    # Attempt to find a release .deb for the host architecture and install it
+    local arch
+    arch="$(dpkg --print-architecture 2>/dev/null || echo 'amd64')"
+    local candidate_url
+
+    # Use GitHub releases API to find the browser_download_url for a matching .deb
+    # We look for linux_${arch} or linux_${arch%%-*} patterns when present
+    local short_arch
+    short_arch="${arch%%-*}"
+
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_info "[DRY RUN] Would search GitHub releases for a .deb for arch: $arch"
+        return 0
+    fi
+
+    log_info "Searching GitHub releases for gh .deb matching arch: $arch"
+    candidate_url=$(curl -sL "https://api.github.com/repos/cli/cli/releases/latest" \
+        | grep -E "browser_download_url[^\"]+linux_${short_arch}.*\\.deb" \
+        | head -n1 | cut -d '"' -f4 || true)
+
+    if [[ -z "$candidate_url" ]]; then
+        # try more relaxed pattern
+        candidate_url=$(curl -sL "https://api.github.com/repos/cli/cli/releases/latest" \
+            | grep -E "browser_download_url[^\"]+linux.*\\.deb" \
+            | head -n1 | cut -d '"' -f4 || true)
+    fi
+
+    if [[ -z "$candidate_url" ]]; then
+        log_warn "Could not find a .deb asset URL for gh on GitHub releases (network or API restrictions)"
+        return 1
+    fi
+
+    log_info "Found candidate .deb: $candidate_url"
+    local tmp_deb="/tmp/ghcli-fallback.deb"
+
+    if ! curl -fsSL "$candidate_url" -o "$tmp_deb"; then
+        log_warn "Failed to download fallback .deb: $candidate_url"
+        rm -f "$tmp_deb" 2>/dev/null || true
+        return 1
+    fi
+
+    log_info "Installing fallback .deb package (dpkg -i)"
+    if ! dpkg -i "$tmp_deb" >/dev/null 2>&1; then
+        log_warn "dpkg install returned an error; attempting to fix missing dependencies"
+        apt-get install -f -y >/dev/null 2>&1 || true
+    fi
+
+    rm -f "$tmp_deb" 2>/dev/null || true
+
+    if check_command "gh"; then
+        log_success "Fallback installation succeeded"
+        return 0
+    fi
+
+    log_warn "Fallback .deb installation completed but 'gh' still not found"
+    return 1
 }
 
 ghcli_install_completion() {

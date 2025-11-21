@@ -27,6 +27,7 @@
     - [사용자 전환 문제](#사용자-전환-문제)
     - [APT 소스 문제](#apt-소스-문제)
     - [로그 파일 확인](#로그-파일-확인)
+     - [GitHub CLI 설치 후 명령어가 PATH에 없는 경우](#github-cli-명령어-누락)
     - [권한 재설정](#권한-재설정)
   - [추가 리소스](#추가-리소스)
     - [구성 파일 위치](#구성-파일-위치)
@@ -324,6 +325,43 @@ tail -f /var/log/ml-dev-bootstrap.log
 # 상세 로깅 활성화
 sudo ./setup.sh --verbose [모듈명]
 ```
+
+### GitHub CLI 설치 후 명령어가 PATH에 없는 경우
+
+발생 증상: 설치 로그에 `GitHub CLI package installed but command not found in PATH` 같은 메시지가 표시되지만 `apt` 설치가 성공한 것처럼 보입니다.
+
+원인: 패키지가 설치되었지만, 패키지 제공 바이너리가 셸의 PATH에서 즉시 인식되지 않거나 패키 저장소/패키지 버전 문제로 바이너리가 다른 위치에 설치되었을 수 있습니다.
+
+해결 방법 (스크립트는 자동적으로 몇 가지 대체 경로를 시도합니다):
+
+- 먼저 셸 캐시를 새로고침합니다:
+
+```bash
+hash -r
+exec $SHELL -l
+command -v gh || echo "gh not found"
+```
+
+- 패키지 안에 바이너리 파일이 존재하는지 확인:
+
+```bash
+dpkg -L gh | grep -E '/usr/bin/gh|/bin/gh' || dpkg -s gh
+ls -l /usr/local/bin/gh /usr/bin/gh /bin/gh || true
+```
+
+- 필요하면 패키지를 재설치하거나 수동으로 .deb를 다운받아 설치하세요:
+
+```bash
+sudo apt update && sudo apt install --reinstall -y gh
+# (대체) 최신 릴리스의 .deb 다운로드 및 설치
+curl -sL "https://api.github.com/repos/cli/cli/releases/latest" \
+  | grep -E 'browser_download_url[^\"]+linux.*\.deb' \
+  | head -n1 | cut -d '"' -f4 \
+  | xargs -r curl -fsSL -o /tmp/gh.deb && sudo dpkg -i /tmp/gh.deb && sudo apt-get install -f -y
+```
+
+스크립트 측면: `ghcli` 모듈은 설치 후 `gh` 명령이 바로 보이지 않으면 `apt` 재설치, PATH/hash 재확인, 그리고 GitHub releases에서 .deb를 받아 설치하는 안전한 대체 루트를 시도하도록 업데이트되었습니다.
+
 
 ### 권한 재설정
 

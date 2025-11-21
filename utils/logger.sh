@@ -43,12 +43,36 @@ init_logging() {
         *) export LOG_LEVEL_NUM=$LOG_LEVEL_INFO ;;
     esac
     
-    # Create log file if specified
+    # Create log file if specified and ensure it's writable.
+    # If the requested path isn't writable, try a fallback path under /tmp.
+    LOG_FILE_WRITABLE=false
     if [[ -n "${LOG_FILE:-}" ]]; then
-        touch "$LOG_FILE" 2>/dev/null || {
-            echo "Warning: Cannot create log file: $LOG_FILE" >&2
-            unset LOG_FILE
-        }
+        if touch "$LOG_FILE" 2>/dev/null && [[ -w "$LOG_FILE" ]]; then
+            LOG_FILE_WRITABLE=true
+        else
+            # try to fix permissions on an existing file
+            if [[ -f "$LOG_FILE" ]]; then
+                chmod u+rw "$LOG_FILE" >/dev/null 2>&1 || true
+            fi
+
+            if touch "$LOG_FILE" 2>/dev/null && [[ -w "$LOG_FILE" ]]; then
+                LOG_FILE_WRITABLE=true
+            else
+                # fallback to a tmp file in /tmp
+                local base_name
+                base_name="$(basename "$LOG_FILE")"
+                local fallback="/tmp/${base_name:-setup-utility}.${$}.log"
+                if touch "$fallback" 2>/dev/null && [[ -w "$fallback" ]]; then
+                    echo "Warning: Cannot create or write to log file: $LOG_FILE; using fallback: $fallback" >&2
+                    export LOG_FILE="$fallback"
+                    LOG_FILE_WRITABLE=true
+                else
+                    echo "Warning: Cannot create log file: $LOG_FILE and fallback also failed; disabling file logging" >&2
+                    unset LOG_FILE
+                    LOG_FILE_WRITABLE=false
+                fi
+            fi
+        fi
     fi
     
     log_debug "Logging initialized with level: ${LOG_LEVEL:-INFO}"
@@ -83,9 +107,9 @@ _log() {
     # Output to terminal
     echo -e "$formatted_message" >&2
     
-    # Output to log file if specified
-    if [[ -n "${LOG_FILE:-}" ]]; then
-        echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
+    # Output to log file if specified and writable
+    if [[ -n "${LOG_FILE:-}" && "${LOG_FILE_WRITABLE:-false}" == "true" && -w "$LOG_FILE" ]]; then
+        echo "[$timestamp] [$level] $message" >> "$LOG_FILE" 2>/dev/null || true
     fi
 }
 
@@ -124,12 +148,12 @@ log_header() {
     echo -e "${COLOR_CYAN}$message${COLOR_RESET}" >&2
     echo -e "${COLOR_CYAN}$border${COLOR_RESET}\n" >&2
     
-    if [[ -n "${LOG_FILE:-}" ]]; then
-        echo "" >> "$LOG_FILE"
-        echo "$border" >> "$LOG_FILE"
-        echo "$message" >> "$LOG_FILE"
-        echo "$border" >> "$LOG_FILE"
-        echo "" >> "$LOG_FILE"
+    if [[ -n "${LOG_FILE:-}" && "${LOG_FILE_WRITABLE:-false}" == "true" && -w "$LOG_FILE" ]]; then
+        echo "" >> "$LOG_FILE" 2>/dev/null || true
+        echo "$border" >> "$LOG_FILE" 2>/dev/null || true
+        echo "$message" >> "$LOG_FILE" 2>/dev/null || true
+        echo "$border" >> "$LOG_FILE" 2>/dev/null || true
+        echo "" >> "$LOG_FILE" 2>/dev/null || true
     fi
 }
 
@@ -146,8 +170,8 @@ log_command() {
     local command="$1"
     log_debug "Executing: $command"
     
-    if [[ -n "${LOG_FILE:-}" ]]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [COMMAND] $command" >> "$LOG_FILE"
+    if [[ -n "${LOG_FILE:-}" && "${LOG_FILE_WRITABLE:-false}" == "true" && -w "$LOG_FILE" ]]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [COMMAND] $command" >> "$LOG_FILE" 2>/dev/null || true
     fi
 }
 
@@ -197,8 +221,8 @@ log_blank_line() {
 }
 # Set log file permissions securely
 set_log_permissions() {
-    if [[ -n "${LOG_FILE:-}" ]] && [[ -f "$LOG_FILE" ]]; then
-        chmod 640 "$LOG_FILE"
+    if [[ -n "${LOG_FILE:-}" ]] && [[ -f "$LOG_FILE" ]] && [[ "${LOG_FILE_WRITABLE:-false}" == "true" ]]; then
+        chmod 640 "$LOG_FILE" 2>/dev/null || true
         log_debug "Set log file permissions: $LOG_FILE"
     fi
 }
@@ -208,7 +232,7 @@ set_log_permissions() {
 # =============================================================================
 
 show_log_summary() {
-    if [[ -z "${LOG_FILE:-}" ]] || [[ ! -f "$LOG_FILE" ]]; then
+    if [[ -z "${LOG_FILE:-}" ]] || [[ ! -f "$LOG_FILE" ]] || [[ ! -r "$LOG_FILE" ]]; then
         log_warn "No log file available for summary"
         return 1
     fi

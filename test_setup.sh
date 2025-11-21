@@ -90,6 +90,29 @@ test_dry_run_mode() {
     fi
 }
 
+test_ghcli_install_dry_run() {
+    log_info "Testing ghcli installer behavior in DRY_RUN mode"
+
+    export DRY_RUN=true
+
+    # Source module and run the package installation function directly
+    if source "$SCRIPT_DIR/modules/ghcli.sh" >/dev/null 2>&1; then
+        if ghcli_install_package; then
+            log_success "ghcli_install_package honored DRY_RUN (returned success)"
+            unset DRY_RUN
+            return 0
+        else
+            log_error "ghcli_install_package failed under DRY_RUN"
+            unset DRY_RUN
+            return 1
+        fi
+    else
+        log_error "Failed to source ghcli module"
+        unset DRY_RUN
+        return 1
+    fi
+}
+
 test_configuration_validation() {
     log_info "Testing configuration validation..."
 
@@ -338,6 +361,7 @@ run_all_tests() {
     local tests=(
         "test_module_loading"
         "test_dry_run_mode"
+        "test_ghcli_install_dry_run"
         "test_configuration_validation"
         "test_utility_functions"
         "test_file_operations"
