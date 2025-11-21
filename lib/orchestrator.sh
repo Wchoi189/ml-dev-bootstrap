@@ -44,16 +44,15 @@ execute_module() {
 }
 
 execute_all_modules() {
-    log_info "Executing all modules in order (skipping envmgr and ssh by default)..."
+    log_info "Executing all modules in order..."
     for module in "${MODULE_ORDER[@]}"; do
-        [[ "$module" == "envmgr" ]] && continue
         [[ "$module" == "ssh" ]] && continue
         execute_module "$module" || {
             log_error "Failed to execute module: $module"
             return 1
         }
     done
-    log_success "All modules (except envmgr) completed successfully!"
+    log_success "All modules completed successfully!"
 }
 
 # =============================================================================
@@ -63,11 +62,10 @@ execute_all_modules() {
 run_all_modules_with_progress() {
     log_header "Complete Development Environment Setup"
 
-    # Calculate actual modules to run (excluding envmgr and ssh)
+    # Calculate actual modules to run
     local all_modules=("${MODULE_ORDER[@]}")
     local modules_to_run=()
     for module in "${all_modules[@]}"; do
-        [[ "$module" == "envmgr" ]] && continue
         [[ "$module" == "ssh" ]] && continue
         modules_to_run+=("$module")
     done
@@ -76,7 +74,7 @@ run_all_modules_with_progress() {
     local completed_modules=0
     local failed_modules=()
 
-    log_info "Starting complete setup with $total_modules modules (skipping envmgr and ssh)..."
+    log_info "Starting complete setup with $total_modules modules..."
     log_separator
 
     for module in "${modules_to_run[@]}"; do
