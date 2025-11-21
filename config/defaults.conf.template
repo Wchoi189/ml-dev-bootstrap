@@ -1,0 +1,127 @@
+# Enable or disable auto venv activation in .bashrc (yes/no)
+ENABLE_AUTO_VENV_BASHRC=yes
+# Enable or disable pipenv installation (yes/no)
+INSTALL_PIPENV=no
+
+# List of Python versions to install with pyenv (comma-separated)
+PYENV_PYTHON_VERSIONS="3.10.18,3.12.10"
+# =============================================================================
+# Development Environment Setup - Default Configuration
+# =============================================================================
+
+# =============================================================================
+# GLOBAL SETTINGS
+# =============================================================================
+
+# Master installation profile that affects ALL modules.
+# The scripts will adjust their behavior based on this single setting.
+# Options: minimal, standard, full
+GLOBAL_INSTALL_PROFILE=full
+
+# Logging configuration
+LOG_LEVEL=INFO                      # DEBUG, INFO, WARN, ERROR
+LOG_FILE="./setup-utility.log"   # Log file location
+
+# =============================================================================
+# USER & GIT CONFIGURATION
+# =============================================================================
+
+# User and group settings
+USERNAME=vscode
+USER_GROUP=vscode
+USER_UID=1000
+USER_GID=1000
+# User creation mode: main, quick-action, skip
+# main = include in main module execution order
+# quick-action = available as menu quick action only (default)
+# skip = don't create user automatically
+USER_CREATION_MODE=quick-action
+
+# Git user configuration (used by the 'git' module)
+GIT_USER_NAME="your.username"
+GIT_USER_EMAIL="your.email@example.com"
+GIT_DEFAULT_BRANCH=main
+
+# =============================================================================
+# LOCALE CONFIGURATION
+# =============================================================================
+
+DEFAULT_LOCALE="en_US.UTF-8"
+ADDITIONAL_LOCALES="ko_KR.UTF-8"
+# Enable interactive locale selection (yes/no)
+# If yes, user will be prompted to choose between English and Korean
+INTERACTIVE_LOCALE_SELECTION=no
+
+# =============================================================================
+# SSH CONFIGURATION
+# =============================================================================
+
+# Enable or disable SSH setup (yes/no)
+SSH_SETUP=no
+
+# SSH key types to generate (comma-separated: ed25519,rsa,ecdsa)
+SSH_KEY_TYPE="ed25519,rsa"
+
+# RSA key bit size (only used for RSA keys)
+SSH_KEY_BITS=4096
+
+# SSH key comment (defaults to user@hostname)
+SSH_KEY_COMMENT=""
+
+# Target user for SSH setup (when running as root)
+SSH_USER=vscode
+
+# =============================================================================
+# PROMPT STYLE CONFIGURATION
+# =============================================================================
+
+# Choose the appearance of the shell prompt.
+# Options: minimal, simple, modern, powerline, ultra-concise
+# ultra-concise: Just directory name and prompt character (e.g., "ocr-2❯")
+PROMPT_STYLE=ultra-concise
+
+# =============================================================================
+# CONDA (PYTHON ENVIRONMENT) CONFIGURATION
+# =============================================================================
+
+# --- Core Settings ---
+CONDA_PATH="/opt/conda"
+CONDA_ENV_NAME="pytorch3.10"
+PYTHON_VERSION="3.10.13"
+CONDA_CHANNELS="pytorch-nightly pytorch nvidia conda-forge"
+
+# --- Package Lists ---
+# These lists are added to your environment based on the GLOBAL_INSTALL_PROFILE.
+# 'minimal' = base
+# =============================================================================
+# PYENV & POETRY CONFIGURATION
+# =============================================================================
+
+# Enable or disable pyenv installation (yes/no)
+INSTALL_PYENV=yes
+
+# Python version to install with pyenv (overrides CONDA python if used)
+PYENV_PYTHON_VERSION="3.12.10"
+
+# Enable or disable UV installation (yes/no)
+INSTALL_UV=yes
+# UV installation mode: 'system' (shared in /opt) or 'user'
+UV_INSTALL_MODE=system
+# Poetry system installation directory (when POETRY_INSTALL_MODE=system)
+POETRY_HOME=/opt/pypoetry
+
+# Environment manager context behavior
+# Options: auto, root-only, user-only, always
+# auto = detect context and adjust behavior
+# root-only = only install when running as root
+# user-only = only install when running as regular user
+# always = install regardless of context
+ENVMGR_CONTEXT_MODE=auto
+# 'standard' = base + data
+# 'full' = base + data + dev + optional + ml
+CONDA_BASE_PACKAGES="pip setuptools wheel jupyter ipython"
+CONDA_DATA_PACKAGES="numpy pandas matplotlib seaborn scipy scikit-learn"
+CONDA_DEV_PACKAGES="black flake8 pytest mypy pre-commit isort"
+CONDA_OPTIONAL_PACKAGES="requests pillow"
+# Update the ML packages to the desired versions
+CONDA_ML_PACKAGES="pytorch=2.6.0 torchvision torchaudio pytorch-cuda=12.4"

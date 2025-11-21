@@ -49,7 +49,7 @@ install_uv() {
     fi
 
     if [[ "$install_mode" == "system" ]]; then
-        local opt_home="/opt/uv"
+        local opt_home="/opt/uv/bin"
         log_info "[uv] Installing system-wide to $opt_home (group: $dev_group)"
 
         # Ensure dev group exists
@@ -68,11 +68,11 @@ install_uv() {
 
         umask 002
         log_debug "[uv] Creating installation directories..."
-        mkdir -p "$opt_home" "$opt_home/bin"
+        mkdir -p "$opt_home"
 
         # Install UV using the official installer
         log_info "[uv] Installing UV using official installer..."
-        if curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$opt_home/bin" sh; then
+        if curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$opt_home" sh; then
             log_success "[uv] Official installer succeeded"
         else
             log_error "[uv] Official installer failed"
@@ -83,23 +83,32 @@ install_uv() {
         log_debug "[uv] Setting up permissions and PATH..."
         ensure_dev_group_perms "$opt_home" "$dev_group"
 
+        # Detect where the binary actually landed
+        local uv_bin_path="$opt_home/uv"
+        local uvx_bin_path="$opt_home/uvx"
+        local uv_install_dir="$opt_home"
+
+        if [[ ! -f "$uv_bin_path" ]]; then
+             log_warn "[uv] Binary not found at expected path: $uv_bin_path"
+        fi
+
         # Symlink binary into /usr/local/bin for all users
         mkdir -p /usr/local/bin
-        ln -sf "$opt_home/bin/uv" /usr/local/bin/uv
-        ln -sf "$opt_home/bin/uvx" /usr/local/bin/uvx
+        ln -sf "$uv_bin_path" /usr/local/bin/uv
+        ln -sf "$uvx_bin_path" /usr/local/bin/uvx
 
         # Profile script to ensure PATH (defensive)
         local profile_script="/etc/profile.d/uv.sh"
         if [[ ! -f "$profile_script" ]]; then
-            cat > "$profile_script" << 'EOF'
-export PATH="/opt/uv/bin:$PATH"
+            cat > "$profile_script" << EOF
+export PATH="$uv_install_dir:\$PATH"
 EOF
             chmod 644 "$profile_script"
         fi
 
         # Verify
         if ! command -v uv >/dev/null 2>&1; then
-            export PATH="/opt/uv/bin:$PATH"
+            export PATH="$uv_install_dir:$PATH"
         fi
         if ! uv --version >/dev/null 2>&1; then
             log_error "[uv] Verification failed"
