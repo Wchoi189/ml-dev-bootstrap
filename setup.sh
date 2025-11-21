@@ -29,7 +29,7 @@ GIT_DEFAULT_BRANCH=${GIT_DEFAULT_BRANCH:-main}
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 
 # Module execution order (important for dependencies)
-MODULE_ORDER=("system" "locale" "ssh" "envmgr" "prompt" "git")
+MODULE_ORDER=("system" "locale" "ssh" "envmgr" "prompt" "git" "ghcli")
 
 # Module descriptions using individual variables
 MODULES_SYSTEM="System development tools and apt updates"
@@ -41,6 +41,7 @@ MODULES_ENVMGR="Python environment managers (UV and Pyenv default - Conda, Micro
 MODULES_CONDA="Backward compatibility alias for conda module"
 MODULES_PROMPT="Color shell prompt configuration"
 MODULES_GIT="Git configuration setup"
+MODULES_GHCLI="GitHub CLI installation and authentication helper"
 
 # =============================================================================
 # Utility Functions (must be defined before use)

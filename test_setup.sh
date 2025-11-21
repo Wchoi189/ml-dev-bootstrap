@@ -26,7 +26,7 @@ log_header "Setup Utility Test Suite"
 test_module_loading() {
     log_info "Testing module loading..."
 
-    local modules=("system" "locale" "user" "conda" "prompt" "git")
+    local modules=("system" "locale" "user" "conda" "prompt" "git" "ghcli")
     local failed_modules=()
 
     for module in "${modules[@]}"; do
@@ -65,7 +65,7 @@ test_dry_run_mode() {
     export DRY_RUN=true
 
     # Test each module in dry-run mode
-    local modules=("system" "locale" "envmgr" "prompt" "git")
+    local modules=("system" "locale" "envmgr" "prompt" "git" "ghcli")
     local failed_tests=()
 
     for module in "${modules[@]}"; do
@@ -284,7 +284,7 @@ test_menu_system() {
     log_info "Testing menu system..."
 
     # Test that menu options correspond to existing modules
-    local menu_options=("system" "locale" "envmgr" "prompt" "git")
+    local menu_options=("system" "locale" "envmgr" "prompt" "git" "ghcli")
     local missing_options=()
 
     for option in "${menu_options[@]}"; do

@@ -341,6 +341,7 @@ show_menu() {
         echo "        $(menu_option "r)" " User management (create/switch)")"
         echo "        $(menu_option "e)" " Run environment manager(s) (multi-select)")"
         echo "        $(menu_option "p)" " Fix SSH permissions")"
+        echo "        $(menu_option "g)" " Install/configure GitHub CLI (gh)")"
         echo "        $(menu_option "c)" " Show configuration")"
         echo "        $(menu_option "q)" " Quit")"
         echo
@@ -350,7 +351,7 @@ show_menu() {
         read -p "" choice
         echo
         case $choice in
-            [1-6])
+            [1-7])
                 local module_index=$((choice - 1))
                 local selected_module="${MODULE_ORDER[$module_index]}"
                 echo "        $(color_blue "Executing module:") $(color_yellow "$selected_module")"
@@ -441,6 +442,14 @@ show_menu() {
                 else
                     echo "        $(color_red "SSH permissions fix script not found at:") $(color_yellow "$utils_dir/fix-ssh-permissions.sh")"
                 fi
+                echo
+                echo -n "        $(color_purple "Press Enter to continue...")"
+                read -p ""
+                ;;
+            g|G)
+                echo "        $(color_blue "Installing and configuring GitHub CLI...")"
+                echo
+                execute_module "ghcli"
                 echo
                 echo -n "        $(color_purple "Press Enter to continue...")"
                 read -p ""

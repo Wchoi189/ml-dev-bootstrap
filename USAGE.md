@@ -83,6 +83,7 @@ sudo ./setup.sh system git locale
   - **`conda`**: Conda(Micromamba) 설치를 감지하고 업데이트하며, 채널을 구성하고 사용자 권한을 설정합니다.
   - **`envmgr`**: 다중 사용자 dev-그룹 권한을 가진 conda/micromamba, pyenv, poetry, pipenv용 대화형 설치 프로그램입니다.
   - **`git`**: 사용자 정보, 기본 브랜치 이름, 유용한 별칭을 포함한 전역 git 설정을 구성합니다.
+  - **`ghcli`**: GitHub CLI(gh)를 설치하고 GITHUB_PAT/GITHUB_TOKEN을 사용해 자동으로 인증합니다.
   - **`prompt`**: 현재 git 브랜치와 conda 환경을 표시하는 현대적이고 정보가 풍부한 셸 프롬프트를 설정합니다.
 
 -----

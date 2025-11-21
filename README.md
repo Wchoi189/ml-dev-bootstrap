@@ -63,6 +63,7 @@ ML Dev Bootstrap은 새로운 리눅스 기반 도커 개발환경 설정할 때
 - **Python 환경 관리자**: UV 및 Pyenv(기본값), Poetry, Pipenv, Conda, Micromamba
 - **패키지 관리**: 지역 미러를 사용한 APT 소스 구성
 - **셸 향상**: 컬러 프롬프트 및 PATH 관리
+- **GitHub CLI 통합**: gh 설치, 자동 토큰 감지, 메뉴 기반 인증 지원
 
 ### 🔧 **시스템 관리**
 - **SSH 권한 복구**: 일반적인 SSH 권한 문제 빠른 수정
@@ -86,6 +87,7 @@ ML Dev Bootstrap은 새로운 리눅스 기반 도커 개발환경 설정할 때
 | `r` | 사용자 관리 | **새로운 통합 워크플로** |
 | `e` | 환경 관리자 | **UV 및 Pyenv 기본값, 컨텍스트 인식** |
 | `p` | SSH 권한 수정 | **빠른 권한 복구** |
+| `g` | GitHub CLI 설정 | **gh 설치 및 토큰 기반 인증 빠른 실행** |
 | `c` | 구성 표시 | 향상된 디스플레이 |
 | `q` | 종료 | - |
 
@@ -400,6 +402,7 @@ sudo -E ./setup.sh --menu
 | `shell` | 셸 프롬프트 및 환경 | Root/User |
 | `envmgr` | Python 환경 관리자 | Root/User |
 | `ssh` | SSH 권한 및 구성 | Root/User |
+| `ghcli` | GitHub CLI 설치 및 인증 도우미 | Root/User |
 
 ## 지원되는 시스템
 
