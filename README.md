@@ -34,7 +34,8 @@ ml-dev-bootstrap/
 ├── README.md
 ├── setup.sh
 ├── config/
-│   └── defaults.conf
+│   ├── defaults.conf
+│   └── local.conf.example  # 로컬 설정 템플릿
 ├── docs/
 │   └── screenshots/
 ├── modules/
@@ -180,6 +181,23 @@ SSH 권한 복구 유틸리티(메뉴 옵션 `p`)는 일반적인 SSH 권한 문
 권한 불일치로 인해 SSH 연결이 방해받을 수 있는 컨테이너에 연결하는 WSL 사용자에게 특히 유용합니다.
 
 ## 구성
+
+### 로컬 구성 (개인 설정)
+
+프로젝트의 기본 설정(`config/defaults.conf`)을 수정하지 않고 개인적인 설정을 적용하려면 `config/local.conf` 파일을 생성하세요. 이 파일은 git에서 무시되므로 개인 정보를 안전하게 보관할 수 있습니다.
+
+1. 템플릿 복사:
+   ```bash
+   cp config/local.conf.example config/local.conf
+   ```
+2. `config/local.conf` 편집:
+   ```bash
+   # 예시: 내 개인 설정
+   GIT_USER_NAME="My Name"
+   GIT_USER_EMAIL="me@example.com"
+   SSH_SETUP="yes"
+   ```
+3. `setup.sh` 실행 시 자동으로 로드됩니다.
 
 ### 기본 구성
 
