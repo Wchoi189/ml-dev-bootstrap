@@ -5,6 +5,8 @@
 # Provides structured logging with different levels and colors
 # =============================================================================
 
+set -euo pipefail
+
 # Log levels
 declare -r LOG_LEVEL_DEBUG=0
 declare -r LOG_LEVEL_INFO=1

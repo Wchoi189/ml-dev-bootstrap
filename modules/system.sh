@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # =============================================================================
 # System Development Tools Module
 # Installs essential development tools and updates system packages

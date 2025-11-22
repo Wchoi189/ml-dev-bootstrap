@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # =============================================================================
 # Locale Configuration Module
 # Sets up system locales with proper English and Korean support

@@ -1,0 +1,95 @@
+# =============================================================================
+# Local Configuration Overrides - Example Template
+# =============================================================================
+# Copy this file to config/local.conf and customize for your environment.
+# The local.conf file is ignored by git and will not be committed.
+#
+# This file is sourced AFTER config/defaults.conf, so any settings here
+# will override the defaults.
+#
+# Usage:
+#   cp config/local.conf.example config/local.conf
+#   # Edit config/local.conf with your personal settings
+# =============================================================================
+
+# =============================================================================
+# GLOBAL SETTINGS OVERRIDES
+# =============================================================================
+
+# Override the installation profile
+# GLOBAL_INSTALL_PROFILE=minimal
+
+# Override logging configuration
+# LOG_LEVEL=DEBUG
+# LOG_FILE="/tmp/my-setup.log"
+
+# =============================================================================
+# USER & GIT CONFIGURATION OVERRIDES
+# =============================================================================
+
+# Override user settings (useful for local development)
+# USERNAME=myusername
+# USER_GROUP=mygroup
+# USER_UID=1001
+# USER_GID=1001
+
+# Git user configuration (recommended to set for your environment)
+# GIT_USER_NAME="Your Name"
+# GIT_USER_EMAIL="your.email@example.com"
+# GIT_DEFAULT_BRANCH=main
+
+# =============================================================================
+# LOCALE CONFIGURATION OVERRIDES
+# =============================================================================
+
+# Override default locale
+# DEFAULT_LOCALE="ko_KR.UTF-8"
+# ADDITIONAL_LOCALES="en_US.UTF-8"
+# INTERACTIVE_LOCALE_SELECTION=yes
+
+# =============================================================================
+# SSH CONFIGURATION OVERRIDES
+# =============================================================================
+
+# Enable SSH setup
+# SSH_SETUP=yes
+# SSH_KEY_TYPE="ed25519"
+# SSH_KEY_COMMENT="myuser@myhost"
+
+# =============================================================================
+# PROMPT STYLE OVERRIDES
+# =============================================================================
+
+# Override prompt style
+# PROMPT_STYLE=modern
+
+# =============================================================================
+# PYTHON ENVIRONMENT CONFIGURATION OVERRIDES
+# =============================================================================
+
+# Override conda settings
+# CONDA_PATH="/custom/conda/path"
+# CONDA_ENV_NAME="myenv"
+# PYTHON_VERSION="3.11.0"
+
+# Override pyenv settings
+# INSTALL_PYENV=no
+# PYENV_PYTHON_VERSION="3.11.0"
+# PYENV_PYTHON_VERSIONS="3.10.18,3.11.5,3.12.10"
+
+# Override UV settings
+# INSTALL_UV=no
+# UV_INSTALL_MODE=user
+
+# Override Poetry settings
+# POETRY_HOME=/home/myuser/.local/share/pypoetry
+
+# Environment manager context mode
+# ENVMGR_CONTEXT_MODE=user-only
+
+# =============================================================================
+# ADDITIONAL CUSTOM SETTINGS
+# =============================================================================
+
+# Add any additional custom environment variables or settings here
+# MY_CUSTOM_VAR="value"

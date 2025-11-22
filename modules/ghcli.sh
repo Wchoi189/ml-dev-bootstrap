@@ -1,9 +1,16 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # =============================================================================
 # GitHub CLI Setup Module
 # Installs and optionally authenticates GitHub CLI (gh)
 # =============================================================================
+
+# Source centralized authentication utilities
+UTILS_DIR="${UTILS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../utils" && pwd)}"
+# shellcheck source=../utils/auth.sh
+source "$UTILS_DIR/auth.sh"
 
 GHCLI_KEYRING_PATH="/usr/share/keyrings/githubcli-archive-keyring.gpg"
 GHCLI_APT_SOURCE="/etc/apt/sources.list.d/github-cli.list"
@@ -251,7 +258,7 @@ ghcli_attempt_authentication() {
     fi
 
     local token
-    token="$(ghcli_discover_token)"
+    token="$(get_github_token)"
 
     if [[ -z "$token" ]]; then
         log_warn "No GitHub token (GITHUB_PAT/GITHUB_TOKEN) detected; run 'gh auth login' later to authenticate"
@@ -266,51 +273,8 @@ ghcli_attempt_authentication() {
     fi
 }
 
-ghcli_discover_token() {
-    local env_vars=("GITHUB_PAT" "GITHUB_TOKEN" "GH_TOKEN")
-    for var in "${env_vars[@]}"; do
-        local value="${!var:-}"
-        if [[ -n "$value" ]]; then
-            log_debug "Found GitHub token in environment variable: $var"
-            echo "$value"
-            return 0
-        fi
-    done
-
-    local candidates=()
-    if [[ -n "${GITHUB_TOKEN_FILE:-}" ]]; then
-        candidates+=("$GITHUB_TOKEN_FILE")
-    fi
-    candidates+=("$SCRIPT_DIR/.env.local" "$SCRIPT_DIR/.env" "$CONFIG_DIR/.env.local")
-
-    for file in "${candidates[@]}"; do
-        [[ -f "$file" ]] || continue
-
-        local line
-        line="$(grep -E '^GITHUB_(PAT|TOKEN)[:=]' "$file" | tail -n1 || true)"
-        [[ -z "$line" ]] && continue
-
-        local token_raw
-        if [[ "$line" == *"="* ]]; then
-            token_raw="${line#*=}"
-        else
-            token_raw="${line#*:}"
-        fi
-
-        token_raw="${token_raw//\"/}"
-        token_raw="${token_raw//\'/}"
-        local token
-        token="$(echo "$token_raw" | xargs)"
-
-        if [[ -n "$token" ]]; then
-            log_info "Loaded GitHub token from $file"
-            echo "$token"
-            return 0
-        fi
-    done
-
-    return 0
-}
+# Legacy function removed - now using centralized get_github_token from utils/auth.sh
+# Backward compatibility: utils/auth.sh provides ghcli_discover_token() alias
 
 ghcli_authenticate_user() {
     local target_user="$1"

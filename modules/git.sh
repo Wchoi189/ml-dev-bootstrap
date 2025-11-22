@@ -1,9 +1,16 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # =============================================================================
 # Git Configuration Module
 # Configures git with user information and development-friendly settings
 # =============================================================================
+
+# Source centralized authentication utilities
+UTILS_DIR="${UTILS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../utils" && pwd)}"
+# shellcheck source=../utils/auth.sh
+source "$UTILS_DIR/auth.sh"
 
 # Helper function to run git commands as the development user
 # This changes to the user's home directory to avoid permissions issues.
@@ -170,7 +177,7 @@ configure_git_credentials() {
 
     # Discover GitHub token from environment or .env.local
     local token
-    token="$(discover_github_token)"
+    token="$(get_github_token)"
 
     if [[ -z "$token" ]]; then
         log_warn "No GitHub token found; git will require manual authentication for private repos"
@@ -194,46 +201,8 @@ configure_git_credentials() {
     return 0
 }
 
-discover_github_token() {
-    local env_vars=("GITHUB_PAT" "GITHUB_TOKEN" "GH_TOKEN")
-    for var in "${env_vars[@]}"; do
-        local value="${!var:-}"
-        if [[ -n "$value" ]]; then
-            log_debug "Found GitHub token in environment variable: $var"
-            echo "$value"
-            return 0
-        fi
-    done
-
-    local candidates=()
-    candidates+=("$_REPO_ROOT/.env.local" "$_REPO_ROOT/.env" "$_REPO_ROOT/config/.env.local")
-
-    for file in "${candidates[@]}"; do
-        [[ -f "$file" ]] || continue
-
-        local line
-        line="$(grep -E '^GITHUB_(PAT|TOKEN)[:=]' "$file" | tail -n1 || true)"
-        [[ -z "$line" ]] && continue
-
-        local token_raw
-        if [[ "$line" == *"="* ]]; then
-            token_raw="${line#*=}"
-        else
-            token_raw="${line#*:}"
-        fi
-
-        token_raw="${token_raw//\"/}"
-        token_raw="${token_raw//\'/}"
-
-        if [[ -n "$token_raw" ]]; then
-            log_debug "Found GitHub token in file: $file"
-            echo "$token_raw"
-            return 0
-        fi
-    done
-
-    return 1
-}
+# Legacy function removed - now using centralized get_github_token from utils/auth.sh
+# Backward compatibility: utils/auth.sh provides discover_github_token() alias
 
 # =============================================================================
 # Verification Functions (simplified and corrected)

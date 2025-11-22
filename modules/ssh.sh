@@ -1,4 +1,6 @@
 #!/bin/bash
+
+set -euo pipefail
 # =============================================================================
 # SSH Setup Module
 # Configure SSH keys, client settings, and agent for easier server access

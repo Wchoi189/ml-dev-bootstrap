@@ -7,15 +7,13 @@
 
 set -euo pipefail  # Exit on error, undefined vars, pipe failures
 
-# Script directory and paths
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$SCRIPT_DIR/config"
-MODULES_DIR="$SCRIPT_DIR/modules"
-UTILS_DIR="$SCRIPT_DIR/utils"
+# Load centralized context (path resolution and configuration)
+CONTEXT_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/context.sh"
+# shellcheck source=lib/context.sh
+source "$CONTEXT_SCRIPT"
 
-# Configuration
-CONFIG_FILE="$CONFIG_DIR/defaults.conf"
-[[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+# Backward compatibility: SCRIPT_DIR points to REPO_ROOT
+SCRIPT_DIR="$REPO_ROOT"
 
 # Default values (can be overridden by config file)
 USERNAME=${USERNAME:-vscode}

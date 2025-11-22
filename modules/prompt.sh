@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # =============================================================================
 # Color Shell Prompt Configuration Module
 # Sets up beautiful, informative color prompts for development
