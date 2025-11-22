@@ -40,7 +40,7 @@ run_git() {
         log_debug "Set DEV_HOME to: $DEV_HOME"
     fi
 
-    local total_steps=6
+    local total_steps=7
     local current_step=0
 
     # Step 1: Validate git configuration
@@ -68,7 +68,12 @@ run_git() {
     log_step $current_step $total_steps "Setting up git aliases"
     setup_git_aliases || return 1
 
-    # Step 6: Verify git configuration
+    # Step 6: Configure git credentials for GitHub
+    ((current_step++))
+    log_step $current_step $total_steps "Configuring git credentials"
+    configure_git_credentials || return 1
+
+    # Step 7: Verify git configuration
     ((current_step++))
     log_step $current_step $total_steps "Verifying git configuration"
     verify_git_configuration || return 1
@@ -158,6 +163,76 @@ setup_git_aliases() {
 
     log_success "Git aliases setup completed"
     return 0
+}
+
+configure_git_credentials() {
+    log_info "Configuring git credentials for GitHub..."
+
+    # Discover GitHub token from environment or .env.local
+    local token
+    token="$(discover_github_token)"
+
+    if [[ -z "$token" ]]; then
+        log_warn "No GitHub token found; git will require manual authentication for private repos"
+        return 0
+    fi
+
+    # Configure credential helper for root
+    git config --global credential.helper store
+    echo "https://oauth2:$token@github.com" > "$HOME/.git-credentials"
+    chmod 600 "$HOME/.git-credentials"
+
+    # Configure credential helper for dev user
+    if check_user_exists "$DEV_USERNAME"; then
+        run_git_as_user config --global credential.helper store
+        echo "https://oauth2:$token@github.com" > "$DEV_HOME/.git-credentials"
+        chown "$DEV_USERNAME:$DEV_GROUP" "$DEV_HOME/.git-credentials"
+        chmod 600 "$DEV_HOME/.git-credentials"
+    fi
+
+    log_success "Git credentials configured for GitHub"
+    return 0
+}
+
+discover_github_token() {
+    local env_vars=("GITHUB_PAT" "GITHUB_TOKEN" "GH_TOKEN")
+    for var in "${env_vars[@]}"; do
+        local value="${!var:-}"
+        if [[ -n "$value" ]]; then
+            log_debug "Found GitHub token in environment variable: $var"
+            echo "$value"
+            return 0
+        fi
+    done
+
+    local candidates=()
+    candidates+=("$_REPO_ROOT/.env.local" "$_REPO_ROOT/.env" "$_REPO_ROOT/config/.env.local")
+
+    for file in "${candidates[@]}"; do
+        [[ -f "$file" ]] || continue
+
+        local line
+        line="$(grep -E '^GITHUB_(PAT|TOKEN)[:=]' "$file" | tail -n1 || true)"
+        [[ -z "$line" ]] && continue
+
+        local token_raw
+        if [[ "$line" == *"="* ]]; then
+            token_raw="${line#*=}"
+        else
+            token_raw="${line#*:}"
+        fi
+
+        token_raw="${token_raw//\"/}"
+        token_raw="${token_raw//\'/}"
+
+        if [[ -n "$token_raw" ]]; then
+            log_debug "Found GitHub token in file: $file"
+            echo "$token_raw"
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # =============================================================================

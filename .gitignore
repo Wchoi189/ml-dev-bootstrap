@@ -158,6 +158,6 @@ setup-utility.log
 # Backup files
 *.bak
 *.backup
-*.conf
+# *.conf
 # Ignore any local per-user config files in config/
-config/*.conf
+# config/*.conf
