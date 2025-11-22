@@ -9,8 +9,6 @@ status: "draft"
 tags: ["ui", "cleanup", "ssh"]
 ---
 
-> **⚠️ IMPORTANT:** This artifact must be generated using the AgentQMS toolbelt script (`python -m agent_qms.toolbelt.core create_artifact --type implementation_plan`). Manual creation may violate naming and validation rules.
-
 # Master Prompt
 
 You are an autonomous AI agent, my Chief of Staff for implementing the **03 - UI/UX Modernization & Cleanup**. Your primary responsibility is to execute the "Living Implementation Blueprint" systematically, handle outcomes, and keep track of our progress. Do not ask for clarification on what to do next; your next task is always explicitly defined.
