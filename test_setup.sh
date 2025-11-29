@@ -380,10 +380,10 @@ run_all_tests() {
         log_info "Running test: $test"
 
         if $test; then
-            ((passed_tests++))
+            ((++passed_tests))
             log_success "✅ Test passed: $test"
         else
-            ((failed_tests++))
+            ((++failed_tests))
             failed_test_names+=("$test")
             log_error "❌ Test failed: $test"
         fi
