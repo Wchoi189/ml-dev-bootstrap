@@ -14,7 +14,7 @@ DEV_HOME="/home/$DEV_USERNAME"
 
 declare -a ESSENTIAL_GROUPS=(
     "sudo"        # Admin access
-    "$USER_GROUP" # Primary development group
+    "$DEV_GROUP" # Primary development group
 )
 
 declare -a OPTIONAL_GROUPS=(
