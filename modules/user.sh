@@ -14,7 +14,7 @@ DEV_HOME="/home/$DEV_USERNAME"
 
 declare -a ESSENTIAL_GROUPS=(
     "sudo"        # Admin access
-    "$USER_GROUP" # Primary development group
+    "$DEV_GROUP" # Primary development group
 )
 
 declare -a OPTIONAL_GROUPS=(
@@ -330,7 +330,7 @@ configure_user_groups() {
 
     for group in "${ESSENTIAL_GROUPS[@]}"; do
         # Skip the primary group (already set during user creation)
-        if [[ "$group" == "$USER_GROUP" ]]; then
+        if [[ "$group" == "$DEV_GROUP" ]]; then
             log_debug "Skipping primary group: $group"
             continue
         fi
